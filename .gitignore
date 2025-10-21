@@ -1,0 +1,27 @@
+# OS Files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor files
+*.swp
+*.swo
+*~
+.vscode/
+.idea/
+
+# Backup files
+*.backup
+*.bak
+*.tmp
+
+# Test files
+test.html
+
+# Node modules (if you add npm later)
+node_modules/
+package-lock.json
+
+# Logs
+*.log
+npm-debug.log*

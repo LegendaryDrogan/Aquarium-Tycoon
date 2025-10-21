@@ -1,0 +1,15 @@
+# Git
+.git
+.gitignore
+
+# Documentation
+CLAUDE.md
+README.md
+
+# Docker files (don't need these inside the image)
+docker-compose.yml
+.dockerignore
+
+# OS files
+.DS_Store
+Thumbs.db
