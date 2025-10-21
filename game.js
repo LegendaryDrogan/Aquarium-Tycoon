@@ -8,7 +8,7 @@
    ========================================== */
 const GAME_VERSION = '2.8.1';
 const PRESTIGE_BASE = 10_000_000; // starting prestige price
-const AUTOMATION_PASSWORD = '!!!!'; // Password for automation features
+const AUTOMATION_PASSWORD = 'HAX'; // Password for automation features
 
 // Automation unlock state
 let automationUnlocked = false;
