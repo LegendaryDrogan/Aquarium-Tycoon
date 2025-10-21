@@ -10,9 +10,6 @@ const GAME_VERSION = '2.8.1';
 const PRESTIGE_BASE = 10_000_000; // starting prestige price
 const AUTOMATION_PASSWORD = 'HAX'; // Password for automation features
 
-// Automation unlock state
-let automationUnlocked = false;
-
 // Debug speed multiplier
 let debugSpeedMultiplier = 1;
 
@@ -92,6 +89,7 @@ const state = {
   prestige: 0,
   settings: { audio:false, volume:0.4, fpsCap:60, intensity:1.0 },
   unlockedBackgrounds: { default: true }, // global unlocks
+  automationUnlocked: false, // track automation unlock status
   tanks: [], // { uid,typeId,name,items,fish,lastTick,automation,backgroundId }
   activeTankUid: null,
   nextUid: 1
@@ -227,6 +225,7 @@ function load(){
       state.prestige = state.prestige||0;
       state.settings = state.settings || { audio:false, volume:0.4, fpsCap:60, intensity:1.0 };
       state.unlockedBackgrounds = state.unlockedBackgrounds || { default: true };
+      state.automationUnlocked = state.automationUnlocked || false;
       for(const t of state.tanks){
         t.automation = t.automation || { autoSell:false, autoBuy:false, mode:'smart', target:'guppy', reserve:0 };
         t.automation.mode = t.automation.mode || 'smart';
@@ -544,7 +543,7 @@ function renderShop(){
     // Automations - Password Protected
     const auto = document.createElement('div'); auto.className='card';
 
-    if(!automationUnlocked){
+    if(!state.automationUnlocked){
       // Show password prompt
       auto.innerHTML = `
         <div>
@@ -560,8 +559,9 @@ function renderShop(){
       auto.querySelector('#unlockAuto').onclick = ()=>{
         const pw = auto.querySelector('#autoPassword').value;
         if(pw === AUTOMATION_PASSWORD){
-          automationUnlocked = true;
+          state.automationUnlocked = true;
           log('✅ Automation features unlocked!');
+          save(); // Save the unlock state
           renderShop(); // Refresh to show automations
         } else {
           log('❌ Incorrect password. Access denied.');
@@ -595,7 +595,7 @@ function renderShop(){
     }
 
     // Only show automation settings if unlocked
-    if(automationUnlocked){
+    if(state.automationUnlocked){
       const a = tInst.automation || (tInst.automation = { autoSell:false, autoBuy:false, mode:'smart', target:'guppy', reserve:0 });
       const controls = document.createElement('div'); controls.className='card';
       const speciesOpts = species.map(s=>`<option value="${s.id}" ${s.id===a.target?'selected':''}>${s.name}</option>`).join('');
