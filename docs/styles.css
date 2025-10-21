@@ -599,12 +599,18 @@ canvas {
 }
 
 @media (max-width: 768px) {
+  body {
+    overflow: auto; /* Allow scrolling on mobile */
+  }
+
   .app {
     grid-template-columns: 1fr;
-    grid-template-rows: auto auto 1fr;
-    grid-template-areas: 'top' 'tank' 'shop';
+    grid-template-rows: auto 1fr;
+    grid-template-areas: 'top' 'shop';
     padding: 8px;
     gap: 8px;
+    height: auto; /* Allow natural height */
+    min-height: 100vh;
   }
 
   .topbar {
@@ -635,13 +641,17 @@ canvas {
   }
 
   .shop {
-    max-height: 45vh;
-    min-height: 200px;
+    max-height: none; /* Remove max-height restriction */
+    min-height: calc(100vh - 200px); /* Give shop more space */
+  }
+
+  .list {
+    -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+    max-height: calc(100vh - 320px); /* Ensure scrollable area */
   }
 
   .tank {
-    min-height: 300px;
-    order: -1; /* Show tank first on mobile */
+    display: none; /* Hide tank on mobile to save space */
   }
 
   .overlay {
@@ -674,6 +684,7 @@ canvas {
     padding: 6px 8px;
     gap: 4px;
     overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
   }
 
   .tab {

@@ -1,17 +1,20 @@
 /* ==========================================
-   Aquarium Tycoon (v2.8.0)
-   - Mobile-friendly responsive design
-   - Touch controls optimized
-   - Password-protected automation features
+   Aquarium Tycoon (v2.8.1)
+   - Improved mobile UI and scrolling
+   - Simplified automation password
+   - Debug speed controls for testing
    - Enhanced sprite rendering with realistic details
    - Modular file structure for easier development
    ========================================== */
-const GAME_VERSION = '2.8.0';
+const GAME_VERSION = '2.8.1';
 const PRESTIGE_BASE = 10_000_000; // starting prestige price
-const AUTOMATION_PASSWORD = 'Ch@s3R0cks'; // Password for automation features
+const AUTOMATION_PASSWORD = '123456'; // Password for automation features
 
 // Automation unlock state
 let automationUnlocked = false;
+
+// Debug speed multiplier
+let debugSpeedMultiplier = 1;
 
 /* ---- Backgrounds ---- */
 const backgrounds = [
@@ -113,6 +116,7 @@ const audioToggle = document.getElementById('audioToggle');
 const audioVol = document.getElementById('audioVol');
 const fpsCapSel = document.getElementById('fpsCap');
 const vizIntensity = document.getElementById('vizIntensity');
+const debugSpeedSel = document.getElementById('debugSpeed');
 const closeSettings = document.getElementById('closeSettings');
 
 const canvas = document.getElementById('aquarium');
@@ -1454,7 +1458,7 @@ function simulateAll(dt){
     const gMult=growthMultiplier(t);
     for(const f of t.fish){
       const sp=species.find(s=>s.id===f.sp);
-      f.age+=dt; f.size=clamp(f.size + sp.growth*gMult*dt, 0, 1);
+      f.age+=dt; f.size=clamp(f.size + sp.growth*gMult*dt*debugSpeedMultiplier, 0, 1);
       f.wobble += dt*2; f.vy += Math.sin(f.wobble)*2*dt; f.x += f.vx*dt; f.y += f.vy*dt;
       if(f.x<50){f.x=50; f.vx=Math.abs(f.vx); f.dir=1;}
       if(f.x>viewW-50){f.x=viewW-50; f.vx=-Math.abs(f.vx); f.dir=-1;}
@@ -1540,7 +1544,7 @@ function applyOfflineProgressAll(){
     let matured=0;
     for(const f of t.fish){
       const sp=species.find(s=>s.id===f.sp);
-      f.size = clamp(f.size + sp.growth*gMult*secs, 0, 1);
+      f.size = clamp(f.size + sp.growth*gMult*secs*debugSpeedMultiplier, 0, 1);
       if(f.size>=0.8) matured++;
     }
     log(`${t.name}: while away (${(secs/3600).toFixed(2)}h), ${matured} fish matured.`);
@@ -1682,6 +1686,10 @@ fpsCapSel.onchange = ()=>{
 };
 vizIntensity.oninput = ()=>{
   state.settings.intensity = Number(vizIntensity.value||1);
+};
+debugSpeedSel.onchange = ()=>{
+  debugSpeedMultiplier = parseInt(debugSpeedSel.value,10)||1;
+  log(`Debug speed set to ${debugSpeedMultiplier}x. Fish will grow ${debugSpeedMultiplier}x faster!`);
 };
 
 /* ---- Boot ---- */
