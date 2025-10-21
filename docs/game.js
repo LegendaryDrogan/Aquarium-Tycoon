@@ -1,13 +1,13 @@
 /* ==========================================
-   Aquarium Tycoon (v2.8.2)
-   - Fixed responsive design for all screen sizes
-   - Tank now visible at bottom on mobile
-   - Better button layouts and touch targets
-   - Improved tablet and desktop scaling
+   Aquarium Tycoon (v2.8.3)
+   - Debug speed moved to Automations (password-protected)
+   - Improved responsive design with more breakpoints
+   - Better button layout on mobile (flex-wrap optimization)
+   - Fixed awkward cutoffs when resizing browser
    - Enhanced sprite rendering with realistic details
    - Modular file structure for easier development
    ========================================== */
-const GAME_VERSION = '2.8.2';
+const GAME_VERSION = '2.8.3';
 const PRESTIGE_BASE = 10_000_000; // starting prestige price
 const AUTOMATION_PASSWORD = 'HAX'; // Password for automation features
 
@@ -115,7 +115,6 @@ const audioToggle = document.getElementById('audioToggle');
 const audioVol = document.getElementById('audioVol');
 const fpsCapSel = document.getElementById('fpsCap');
 const vizIntensity = document.getElementById('vizIntensity');
-const debugSpeedSel = document.getElementById('debugSpeed');
 const closeSettings = document.getElementById('closeSettings');
 
 const canvas = document.getElementById('aquarium');
@@ -626,6 +625,33 @@ function renderShop(){
       };
       controls.querySelector('#autoTarget').onchange = (e)=>{ a.target = e.target.value; log(`${tInst.name}: Auto-Buy target set to ${species.find(s=>s.id===a.target).name}.`); save(); };
       controls.querySelector('#autoReserve').onchange = (e)=>{ a.reserve = Math.max(0, parseInt(e.target.value||0,10)); log(`${tInst.name}: Auto-Buy reserve set to ${fmt(a.reserve)}.`); save(); };
+
+      // Debug Speed Controls (only in Automations)
+      const debugCard = document.createElement('div'); debugCard.className='card';
+      debugCard.innerHTML = `
+        <div>
+          <div class="title">⚡ Debug Speed</div>
+          <div class="muted">Speed up fish growth for testing. Does not affect game balance.</div>
+          <div style="display:flex;gap:12px;margin-top:6px;align-items:center;flex-wrap:wrap">
+            <label>Growth Speed:</label>
+            <select id="debugSpeed">
+              <option value="1" ${debugSpeedMultiplier===1?'selected':''}>1x (Normal)</option>
+              <option value="2" ${debugSpeedMultiplier===2?'selected':''}>2x</option>
+              <option value="5" ${debugSpeedMultiplier===5?'selected':''}>5x</option>
+              <option value="10" ${debugSpeedMultiplier===10?'selected':''}>10x</option>
+              <option value="50" ${debugSpeedMultiplier===50?'selected':''}>50x</option>
+              <option value="100" ${debugSpeedMultiplier===100?'selected':''}>100x (Instant)</option>
+            </select>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center"><span class="badge">Current: ${debugSpeedMultiplier}x</span></div>`;
+      listEl.appendChild(debugCard);
+
+      debugCard.querySelector('#debugSpeed').onchange = (e)=>{
+        debugSpeedMultiplier = parseInt(e.target.value,10)||1;
+        log(`⚡ Debug speed set to ${debugSpeedMultiplier}x. Fish will grow ${debugSpeedMultiplier}x faster!`);
+        renderShop(); // Refresh to update badge
+      };
     }
   }
 
@@ -1687,10 +1713,6 @@ fpsCapSel.onchange = ()=>{
 };
 vizIntensity.oninput = ()=>{
   state.settings.intensity = Number(vizIntensity.value||1);
-};
-debugSpeedSel.onchange = ()=>{
-  debugSpeedMultiplier = parseInt(debugSpeedSel.value,10)||1;
-  log(`Debug speed set to ${debugSpeedMultiplier}x. Fish will grow ${debugSpeedMultiplier}x faster!`);
 };
 
 /* ---- Boot ---- */
