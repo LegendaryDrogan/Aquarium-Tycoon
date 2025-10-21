@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Aquarium Tycoon — v2.7.0 Enhanced</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="app">
+  <div class="topbar">
+    <div class="stats">
+      <div class="stat">💰 Coins: <span id="coins" class="val">0</span></div>
+      <div class="stat">🐟 Fish: <span id="fishCount" class="val">0</span> / <span id="capacity" class="val">0</span></div>
+      <div class="stat">⚙️ Growth: <span id="growthMult" class="val">1.00×</span></div>
+      <div class="stat">🏆 Prestige: <span id="prestige" class="val">0</span></div>
+      <div class="stat">🗂️ Tank: <select id="tankSelect"></select></div>
+    </div>
+    <div class="midbar">
+      <button id="toggleLog" class="small">📜 Logs</button>
+    </div>
+    <div class="controls">
+      <button id="settingsBtn" class="btn-accent">Settings</button>
+      <button id="prestigeBtn" class="btn-gold">Prestige</button>
+      <button id="sellMature" class="btn-gold">Sell Mature</button>
+      <button id="saveBtn" class="btn-accent">Save</button>
+      <button id="resetBtn" class="btn-danger">Reset</button>
+    </div>
+  </div>
+
+  <div class="shop">
+    <h3>Shop</h3>
+    <div class="tabs">
+      <button class="tab active" data-tab="fish">Fish</button>
+      <button class="tab" data-tab="tanks">Tanks</button>
+      <button class="tab" data-tab="items">Items</button>
+      <button class="tab" data-tab="backgrounds">Backgrounds</button>
+    </div>
+    <div id="list" class="list"></div>
+    <div class="tiny" style="padding:10px 12px;border-top:1px solid #1b2a47">
+      Tip: Auto-Sell dumps ≥80% fish. Auto-Buy fills capacity with Smart (expensive-first) or a Target species, respecting your reserve.
+    </div>
+  </div>
+
+  <div class="tank">
+    <canvas id="aquarium"></canvas>
+    <div class="overlay">
+      <div class="pill tiny">Parallel tanks simulate—even when not visible.</div>
+      <div class="pill tiny">Hotkeys: [S] Sell Mature • [1/2/3/4] Fish/Tanks/Items/Backgrounds • [Ctrl/Cmd+S] Save</div>
+    </div>
+  </div>
+
+  <!-- Toggleable Logs -->
+  <div id="logPanel" class="logPanel hidden">
+    <div class="logHeader"><h4>Activity</h4><button id="clearLog" class="small">Clear</button></div>
+    <div id="log" class="entries"></div>
+  </div>
+</div>
+
+<!-- Settings Modal -->
+<div id="settingsOverlay" class="modalOverlay">
+  <div class="modal">
+    <h3>Settings</h3>
+    <div class="row">
+      <label><input type="checkbox" id="audioToggle"> Enable Ambient Audio</label>
+      <label>Volume <input type="range" id="audioVol" min="0" max="1" step="0.01" style="width:180px"></label>
+    </div>
+    <div class="row">
+      <label>FPS Cap
+        <select id="fpsCap">
+          <option value="0">Unlimited</option>
+          <option value="30">30</option>
+          <option value="60" selected>60</option>
+          <option value="120">120</option>
+        </select>
+      </label>
+      <label>Visual Intensity <input type="range" id="vizIntensity" min="0.5" max="1.5" step="0.05" value="1" style="width:180px"></label>
+    </div>
+    <div class="footer">
+      <button id="closeSettings" class="btn-accent">Close</button>
+    </div>
+  </div>
+</div>
+
+<script src="game.js"></script>
+</body>
+</html>
