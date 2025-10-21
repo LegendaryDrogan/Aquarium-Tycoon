@@ -1,15 +1,14 @@
 /* ==========================================
-   Aquarium Tycoon (v3.0.0)
-   - COMPLETE SPRITE REDESIGN - All 12 fish rebuilt from scratch
-   - Professional, clean rendering with proper layering
-   - Fixed all rendering bugs (shark teeth, overlapping, etc.)
-   - Better proportions, colors, and realistic features
-   - Smooth animations and proper depth ordering
+   Aquarium Tycoon (v3.1.0)
+   - PNG SPRITE SYSTEM - Replaced canvas-drawn sprites with pixel art
+   - Improved performance with pre-loaded sprite images
+   - Retro pixel art aesthetic for all 12 fish species
+   - Maintained all features: rarity glows, maturity bars, animations
    - Debug speed moved to Automations (password-protected)
    - Responsive design optimized for all screen sizes
    - Modular file structure for easier development
    ========================================== */
-const GAME_VERSION = '3.0.0';
+const GAME_VERSION = '3.1.0';
 const PRESTIGE_BASE = 10_000_000; // starting prestige price
 const AUTOMATION_PASSWORD = 'HAX'; // Password for automation features
 
@@ -59,6 +58,33 @@ const itemsCatalog = [
   { id:'heater', name:'Heater',        baseCost:260, effect:'+6% growth',  growthPerLvl:0.06, max:25 },
   { id:'coral',  name:'Decor (Coral)', baseCost:220, effect:'+5% sell',    sellPerLvl:0.05,  max:25 },
 ];
+
+/* ---- PNG Sprite Loading System ---- */
+const fishSprites = {};
+let spritesLoaded = false;
+
+function preloadSprites() {
+  const spriteNames = ['guppy', 'gold', 'squid', 'koi', 'angel', 'discus',
+                       'eel', 'turtle', 'shark', 'dolphin', 'oarfish', 'angler'];
+  let loadedCount = 0;
+
+  spriteNames.forEach(name => {
+    const img = new Image();
+    img.onload = () => {
+      loadedCount++;
+      if (loadedCount === spriteNames.length) {
+        spritesLoaded = true;
+        console.log('✅ All fish sprites loaded successfully!');
+      }
+    };
+    img.onerror = () => {
+      console.error(`❌ Failed to load sprite: ${name}.png`);
+      loadedCount++;
+    };
+    img.src = `assets/fish/${name}.png`;
+    fishSprites[name] = img;
+  });
+}
 
 /* ---- Visual palette (base colors per species) ---- */
 const speciesStyle = {
@@ -1317,23 +1343,55 @@ const drawerMap = {
 };
 
 function renderSprite(f){
-  // compute style/rarity like the original
   const sp = species.find(s=>s.id===f.sp);
-  const style = (speciesStyle && speciesStyle[sp.id]) || speciesStyle.guppy;
+  if (!sp) return;
+
   const rarity = ({COMMON:null,RARE:RARITIES[1],EPIC:RARITIES[2],LEGENDARY:RARITIES[3]})[f.rarity] || RARITIES[0];
 
   ctx.save();
   ctx.translate(f.x, f.y);
   ctx.scale(f.dir, 1);
-  ctx.shadowColor='rgba(0,0,0,.35)'; ctx.shadowBlur=10;
 
-  try{
-    const dims = (drawerMap[sp.id] || drawGuppy)(f, style, rarity);
-    var rim = (rarity && rarity.glow && rarity.glow.rim) ? rarity.glow.rim : 'rgba(64,139,203,0.6)';
-    maturityBar(f.dir, dims.L, dims.H, f.size, rim);
-  }catch(err){
-    // don’t let a sprite error break the app (or the shop)
-    if(window && window.console) console.error('Sprite render error for', sp && sp.id, err);
+  try {
+    // Get the sprite image
+    const sprite = fishSprites[sp.id];
+
+    if (sprite && sprite.complete && spritesLoaded) {
+      // Calculate size based on fish growth
+      const baseSize = 12 + f.size * 46;
+      const scale = baseSize / 24; // Normalize based on average sprite size
+
+      const width = sprite.width * scale;
+      const height = sprite.height * scale;
+
+      // Apply rarity glow effect
+      if (rarity && rarity.glow) {
+        ctx.shadowColor = rarity.glow.color;
+        ctx.shadowBlur = 20;
+      } else {
+        ctx.shadowColor = 'rgba(0,0,0,.35)';
+        ctx.shadowBlur = 10;
+      }
+
+      // Draw the PNG sprite centered
+      ctx.drawImage(sprite, -width / 2, -height / 2, width, height);
+
+      // Calculate dimensions for maturity bar
+      const L = width * 0.8;
+      const H = height * 0.8;
+
+      var rim = (rarity && rarity.glow && rarity.glow.rim) ? rarity.glow.rim : 'rgba(64,139,203,0.6)';
+      maturityBar(f.dir, L, H, f.size, rim);
+    } else {
+      // Fallback: draw a simple colored circle if sprites not loaded
+      const size = 12 + f.size * 46;
+      ctx.fillStyle = '#4da6ff';
+      ctx.beginPath();
+      ctx.arc(0, 0, size / 2, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  } catch(err) {
+    console.error('Sprite render error for', sp && sp.id, err);
   }
   ctx.restore();
 }
@@ -1762,6 +1820,7 @@ function applyTankBackground(){
   `;
 }
 function init(){
+  preloadSprites(); // Load PNG sprites
   load(); ensureActive();
   resize(); refreshTankSelect(); applyTankBackground(); refreshStats(); renderShop();
   makePlants();
