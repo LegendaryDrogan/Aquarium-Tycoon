@@ -1,17 +1,15 @@
 /* ==========================================
-   Aquarium Tycoon (v3.4.0)
+   Aquarium Tycoon (v4.0.0) - Clean Release
+   - CLEAN PROJECT STRUCTURE - Removed legacy files and duplicates
    - ENHANCED BACKGROUNDS - Stable, detailed, non-glitchy visuals
-   - Seeded randomization for consistent decoration placement
-   - Layered gradients, animated elements (kelp sway, lava pulse, stars)
-   - Unique details per background (moon/stars, coral, ice stalactites, etc.)
    - PROCEDURAL MUSIC SYSTEM - Real melodic ambient music!
-   - Replaced harsh static noise with actual musical compositions
-   - ENHANCED SPRITES - Higher resolution pixel art with more detail
+   - PIXEL ART SPRITES - Higher resolution retro aesthetic
    - Background tank simulation: all tanks grow fish & run automations
    - Debug speed moved to Automations (password-protected)
    - Responsive design optimized for all screen sizes
+   - Production-ready codebase
    ========================================== */
-const GAME_VERSION = '3.4.0';
+const GAME_VERSION = '4.0.0';
 const PRESTIGE_BASE = 10_000_000; // starting prestige price
 const AUTOMATION_PASSWORD = 'HAX'; // Password for automation features
 
