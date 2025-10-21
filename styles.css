@@ -591,93 +591,137 @@ canvas {
   margin-top: 10px;
 }
 
-/* Responsive Design - Enhanced for Mobile */
+/* Responsive Design - Enhanced for All Screen Sizes */
+
+/* Tablet/Medium screens */
 @media (max-width: 1024px) {
   .app {
-    grid-template-columns: 280px 1fr;
+    grid-template-columns: 300px 1fr;
+    gap: 12px;
+    padding: 12px;
+  }
+
+  .topbar {
+    padding: 8px 12px;
+  }
+
+  .stat {
+    font-size: 0.9em;
+    padding: 6px 10px;
   }
 }
 
+/* Mobile/Small screens */
 @media (max-width: 768px) {
   body {
-    overflow: auto; /* Allow scrolling on mobile */
+    overflow: auto;
   }
 
   .app {
     grid-template-columns: 1fr;
-    grid-template-rows: auto 1fr;
-    grid-template-areas: 'top' 'shop';
-    padding: 8px;
-    gap: 8px;
-    height: auto; /* Allow natural height */
+    grid-template-rows: auto auto 1fr auto;
+    grid-template-areas: 'top' 'shop' 'tank';
+    padding: 6px;
+    gap: 6px;
+    height: auto;
     min-height: 100vh;
   }
 
   .topbar {
     grid-template-columns: 1fr;
-    grid-template-rows: auto auto auto;
-    padding: 8px;
-    gap: 8px;
+    grid-template-rows: auto auto;
+    padding: 6px;
+    gap: 6px;
+  }
+
+  .midbar {
+    order: 3;
+    margin-top: 6px;
   }
 
   .stats {
     justify-content: center;
-    gap: 6px;
+    gap: 4px;
+    flex-wrap: wrap;
   }
 
   .stat {
-    padding: 6px 8px;
-    font-size: 0.85em;
+    padding: 4px 8px;
+    font-size: 0.8em;
+    border-radius: 8px;
+  }
+
+  .stat #tankSelect {
+    font-size: 0.9em;
+    padding: 4px 6px;
   }
 
   .controls {
     justify-content: center;
-    gap: 6px;
+    gap: 4px;
+    flex-wrap: wrap;
   }
 
   button {
-    padding: 8px 12px;
-    font-size: 0.9em;
+    padding: 8px 10px;
+    font-size: 0.85em;
+    border-radius: 8px;
+  }
+
+  .small {
+    padding: 6px 8px;
+    font-size: 0.8em;
   }
 
   .shop {
-    max-height: none; /* Remove max-height restriction */
-    min-height: calc(100vh - 200px); /* Give shop more space */
+    max-height: none;
+    min-height: auto;
+  }
+
+  .shop h3 {
+    padding: 8px 10px;
+    font-size: 1em;
   }
 
   .list {
-    -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
-    max-height: calc(100vh - 320px); /* Ensure scrollable area */
+    -webkit-overflow-scrolling: touch;
+    max-height: none;
+    padding: 8px;
   }
 
   .tank {
-    display: none; /* Hide tank on mobile to save space */
+    grid-area: tank;
+    min-height: 300px;
+    height: 40vh;
+    max-height: 400px;
+    margin-bottom: 6px;
   }
 
   .overlay {
     flex-direction: column;
     gap: 4px;
-    left: 5px;
-    bottom: 5px;
+    left: 6px;
+    bottom: 6px;
   }
 
   .overlay .pill {
-    font-size: 0.75em;
+    font-size: 0.7em;
     padding: 4px 6px;
   }
 
   .logPanel {
-    width: 90vw;
-    max-width: 90vw;
-    left: 5vw;
-    bottom: 8px;
-    height: 25vh;
+    width: calc(100vw - 20px);
+    max-width: calc(100vw - 20px);
+    left: 10px;
+    bottom: 10px;
+    height: 30vh;
     min-height: 150px;
   }
 
   .card {
     padding: 8px;
     font-size: 0.9em;
+    margin-bottom: 8px;
   }
 
   .tabs {
@@ -685,17 +729,40 @@ canvas {
     gap: 4px;
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  .tabs::-webkit-scrollbar {
+    display: none;
   }
 
   .tab {
-    padding: 6px 8px;
+    padding: 8px 12px;
     font-size: 0.85em;
     white-space: nowrap;
+    flex-shrink: 0;
   }
 
   .modal {
-    width: 95vw;
-    padding: 12px;
+    width: calc(100vw - 20px);
+    padding: 10px;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+
+  .modal .row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .modal label {
+    width: 100%;
+  }
+
+  .modal select,
+  .modal input[type="range"] {
+    width: 100%;
   }
 }
 

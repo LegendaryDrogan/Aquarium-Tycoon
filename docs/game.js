@@ -1,12 +1,13 @@
 /* ==========================================
-   Aquarium Tycoon (v2.8.1)
-   - Improved mobile UI and scrolling
-   - Simplified automation password
-   - Debug speed controls for testing
+   Aquarium Tycoon (v2.8.2)
+   - Fixed responsive design for all screen sizes
+   - Tank now visible at bottom on mobile
+   - Better button layouts and touch targets
+   - Improved tablet and desktop scaling
    - Enhanced sprite rendering with realistic details
    - Modular file structure for easier development
    ========================================== */
-const GAME_VERSION = '2.8.1';
+const GAME_VERSION = '2.8.2';
 const PRESTIGE_BASE = 10_000_000; // starting prestige price
 const AUTOMATION_PASSWORD = 'HAX'; // Password for automation features
 
