@@ -100,22 +100,122 @@ base_cost × pow(1.6, current_level)
 - `1/2/3/4`: Switch shop tabs (Fish/Tanks/Items/Backgrounds)
 - `Ctrl+S` / `Cmd+S`: Manual save
 
-## Development Notes
+## Development Workflow
 
-**Modifying the Game**
-- All code is in one file - search for specific game constants or functions by name
-- Visual constants in `:root` CSS variables (line ~8)
-- Game balance constants at top of `<script>` section (lines ~177-228)
-- No build process required - just open HTML file in browser
+### Quick Start for Development Sessions
 
-**Testing Changes**
-- Open the HTML file directly in a browser
-- Use browser DevTools console to inspect/modify `state` object
-- localStorage key: `'aquariumSave_v2'`
-- Clear save: `localStorage.removeItem('aquariumSave_v2'); location.reload()`
+1. **Start Local Server**
+   ```bash
+   cd "C:\Users\chase\Desktop\WebGame"
+   python -m http.server 8000
+   ```
+   Then open http://localhost:8000 in your browser
 
-**Common Modifications**
-- Adjust species costs/growth: Edit `species[]` array (lines ~201-214)
-- Add new backgrounds: Add to `backgrounds[]` array and implement rendering in canvas draw functions
-- Change prestige scaling: Modify `PRESTIGE_BASE` (line ~184) and `prestigeSpeed()` (line ~459)
-- Tweak item effects: Edit `itemsCatalog[]` (lines ~223-228)
+2. **Testing Changes**
+   - Make changes to files (game.js, styles.css, index.html)
+   - Refresh browser to see changes
+   - Use browser DevTools console to inspect/modify `state` object
+   - localStorage key: `'aquariumSave_v2'`
+   - Clear save: `localStorage.removeItem('aquariumSave_v2'); location.reload()`
+
+3. **Git Workflow**
+   ```bash
+   git status                    # Check what changed
+   git add -A                    # Stage all changes
+   git commit -m "message"       # Commit with descriptive message
+   git push origin main          # Push to GitHub
+   ```
+
+### Vibe Coding Sessions with Claude
+
+When starting a new coding session with Claude Code, follow this workflow:
+
+1. **Read this file** to get context on the project structure and current state
+2. **Check git status** to see any uncommitted changes
+3. **Discuss goals** - What feature/improvement are we working on?
+4. **Use TodoWrite tool** to create a task list for tracking progress
+5. **Iterate** - Make changes, test, refine
+6. **Commit often** - Create meaningful commits with descriptive messages
+7. **Update documentation** - Keep README.md, CLAUDE.md, and version numbers current
+
+### Common Development Tasks
+
+**Adding New Fish Species**
+1. Add entry to `species[]` array in game.js (~line 34)
+2. Create sprite using `generate_enhanced_sprites.py` or manually
+3. Save sprite as `assets/fish/{species_id}.png`
+4. Add to sprite preloading in `preloadSprites()` (~line 67)
+
+**Creating New Backgrounds**
+1. Add to `backgrounds[]` array (~line 20)
+2. Implement rendering in `drawBackgroundBase()` switch statement (~line 1432)
+3. Use `getStableDecor()` for consistent, non-glitchy decorations
+4. Add corresponding music scale/tempo in `setBackgroundSound()` if desired
+
+**Adding UI Features**
+1. Modify HTML structure in `index.html`
+2. Add styling in `styles.css` using CSS variables for theming
+3. Implement logic in `game.js`
+4. Wire up event listeners in the interaction section
+
+**Generating Enhanced Sprites**
+```bash
+python generate_enhanced_sprites.py
+```
+This creates realistic pixel art sprites in `assets/fish/` for all 12 species
+
+### Project Philosophy
+
+**Visual Quality**
+- Aim for realistic, detailed sprites that match real-life counterparts
+- Use pixel art aesthetic with proper shading, highlights, and anatomical accuracy
+- Backgrounds should be immersive with depth and atmospheric effects
+- UI should be modern, polished, and professional
+
+**Code Organization**
+- Keep files modular and clean
+- Use descriptive variable/function names
+- Comment complex logic
+- Maintain consistent code style
+
+**Version Management**
+- Use semantic versioning (MAJOR.MINOR.PATCH)
+- Update version in: game.js (GAME_VERSION), index.html (title), README.md (badge)
+- Document changes in README.md version history
+- Create descriptive commit messages with emojis for visual clarity
+
+### File Organization
+
+```
+WebGame/
+├── index.html              # HTML structure
+├── styles.css              # All styling
+├── game.js                 # Game logic & rendering
+├── assets/fish/            # Fish sprite PNGs
+├── generate_enhanced_sprites.py  # Sprite generation tool
+├── README.md               # User-facing documentation
+├── CLAUDE.md               # This file - AI development guide
+└── .claude/                # Claude Code settings
+```
+
+### Key Code Locations
+
+- **Game Constants**: game.js ~lines 12-62
+- **Species Data**: game.js ~lines 34-47
+- **Background Rendering**: game.js ~lines 1427-1939
+- **Equipment Visualization**: game.js ~lines 2014-2233
+- **Fish Rendering**: Uses PNG sprites from assets/fish/
+- **CSS Variables**: styles.css ~lines 6-37
+- **UI Layout**: styles.css ~lines 62-74
+
+### Testing Checklist
+
+Before committing major changes:
+- [ ] Test all 12 fish species render correctly
+- [ ] Verify all 10 backgrounds display properly
+- [ ] Check equipment visualizations appear when items are purchased
+- [ ] Test automation features (auto-buy, auto-sell)
+- [ ] Verify prestige system works
+- [ ] Test on different screen sizes (responsive design)
+- [ ] Check browser console for errors
+- [ ] Test save/load functionality
