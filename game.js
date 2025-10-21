@@ -1,13 +1,14 @@
 /* ==========================================
-   Aquarium Tycoon (v2.8.3)
+   Aquarium Tycoon (v2.9.0)
+   - Enhanced fish sprites with better visuals
+   - Guppy: Iridescent colors, rainbow tail shimmer
+   - Improved gradients, shimmer effects, better anatomy
+   - All fish rendered with enhanced detail and realism
    - Debug speed moved to Automations (password-protected)
-   - Improved responsive design with more breakpoints
-   - Better button layout on mobile (flex-wrap optimization)
-   - Fixed awkward cutoffs when resizing browser
-   - Enhanced sprite rendering with realistic details
+   - Responsive design optimized for all screen sizes
    - Modular file structure for easier development
    ========================================== */
-const GAME_VERSION = '2.8.3';
+const GAME_VERSION = '2.9.0';
 const PRESTIGE_BASE = 10_000_000; // starting prestige price
 const AUTOMATION_PASSWORD = 'HAX'; // Password for automation features
 
@@ -821,48 +822,75 @@ function restoreAlpha(){ ctx.restore(); }
 
 /* ---------- species renderers (lifelike & accurate) ---------- */
 function drawGuppy(f, style, rarity){
-  const size=12+f.size*46, L=size*2.35, H=size*1.15, flap=Math.sin(f.wobble*2.3)*(size*0.07);
+  const size=12+f.size*46, L=size*2.45, H=size*1.22, flap=Math.sin(f.wobble*2.3)*(size*0.08);
 
-  // Tail fin with gradient and veins
-  translucent(0.65);
-  ctx.save(); ctx.translate(-L*0.50,0); ctx.rotate(flap*0.02);
-  const tailGrad = ctx.createRadialGradient(0,0,0,0,0,L*0.6);
-  tailGrad.addColorStop(0, style.fin); tailGrad.addColorStop(0.7, style.fin); tailGrad.addColorStop(1, 'rgba(255,255,255,0.1)');
+  // Enhanced flowing tail fin with rainbow iridescence
+  translucent(0.70);
+  ctx.save(); ctx.translate(-L*0.52,0); ctx.rotate(flap*0.025);
+  const tailGrad = ctx.createRadialGradient(0,0,0,0,0,L*0.65);
+  tailGrad.addColorStop(0, style.fin);
+  tailGrad.addColorStop(0.4, style.fin);
+  tailGrad.addColorStop(0.75, 'rgba(255,180,255,0.4)');
+  tailGrad.addColorStop(1, 'rgba(100,200,255,0.2)');
   ctx.fillStyle=tailGrad; ctx.beginPath();
   ctx.moveTo(0,0);
-  ctx.quadraticCurveTo(-L*0.36,-H*1.05,-L*0.66,-H*0.10);
-  ctx.quadraticCurveTo(-L*0.72,0,-L*0.66,H*0.10);
-  ctx.quadraticCurveTo(-L*0.36,H*1.05,0,0); ctx.closePath(); ctx.fill();
-  // Tail fin rays
-  ctx.strokeStyle='rgba(255,255,255,0.25)'; ctx.lineWidth=0.7;
-  for(let i=0; i<5; i++){
-    const angle = (-0.5 + i*0.25) * Math.PI*0.4;
-    ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(-L*0.55*Math.cos(angle), -L*0.55*Math.sin(angle)); ctx.stroke();
+  ctx.quadraticCurveTo(-L*0.38,-H*1.12,-L*0.72,-H*0.12);
+  ctx.quadraticCurveTo(-L*0.78,0,-L*0.72,H*0.12);
+  ctx.quadraticCurveTo(-L*0.38,H*1.12,0,0); ctx.closePath(); ctx.fill();
+  // Enhanced tail fin rays with shimmer
+  ctx.strokeStyle='rgba(255,255,255,0.35)'; ctx.lineWidth=0.9;
+  for(let i=0; i<7; i++){
+    const angle = (-0.6 + i*0.2) * Math.PI*0.45;
+    ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(-L*0.60*Math.cos(angle), -L*0.60*Math.sin(angle)); ctx.stroke();
   }
   ctx.restore(); restoreAlpha();
 
-  // Body with gradient
-  rarityGlow(rarity, function(){ ctx.beginPath(); ctx.ellipse(0,0,L*0.50,H*0.58,0,0,Math.PI*2); });
-  ctx.fillStyle=bodyGrad(style.top, style.belly, H);
-  ctx.beginPath(); ctx.ellipse(0,0,L*0.50,H*0.58,0,0,Math.PI*2); ctx.fill();
+  // Body with enhanced gradient and iridescent shimmer
+  rarityGlow(rarity, function(){ ctx.beginPath(); ctx.ellipse(0,0,L*0.52,H*0.60,0,0,Math.PI*2); });
+  const bodyG = ctx.createLinearGradient(0,-H*0.6,0,H*0.6);
+  bodyG.addColorStop(0, style.top);
+  bodyG.addColorStop(0.3, style.top);
+  bodyG.addColorStop(0.7, style.belly);
+  bodyG.addColorStop(1, style.belly);
+  ctx.fillStyle=bodyG;
+  ctx.beginPath(); ctx.ellipse(0,0,L*0.52,H*0.60,0,0,Math.PI*2); ctx.fill();
+
+  // Iridescent spots on body
+  ctx.globalAlpha=0.25;
+  for(let i=0; i<15; i++){
+    const spotX = (Math.random()*2-1)*L*0.35;
+    const spotY = (Math.random()*2-1)*H*0.40;
+    ctx.fillStyle = i%2===0 ? 'rgba(255,150,255,0.6)' : 'rgba(100,220,255,0.6)';
+    ctx.beginPath(); ctx.arc(spotX, spotY, 0.5+Math.random()*1.2, 0, Math.PI*2); ctx.fill();
+  }
+  ctx.globalAlpha=1;
+
   // Body shadow/depth
-  ctx.save(); ctx.globalAlpha=0.15; ctx.fillStyle='#000000';
-  ctx.beginPath(); ctx.ellipse(0,H*0.2,L*0.45,H*0.25,0,0,Math.PI*2); ctx.fill(); ctx.restore();
+  ctx.save(); ctx.globalAlpha=0.18; ctx.fillStyle='#000000';
+  ctx.beginPath(); ctx.ellipse(0,H*0.22,L*0.46,H*0.28,0,0,Math.PI*2); ctx.fill(); ctx.restore();
 
-  // Dorsal and ventral fins with transparency
-  translucent(0.75);
-  const finGrad = ctx.createLinearGradient(0,-H*0.5,0,0);
-  finGrad.addColorStop(0, style.fin); finGrad.addColorStop(1, 'rgba(255,255,255,0.3)');
+  // Enhanced dorsal and ventral fins
+  translucent(0.78);
+  const finGrad = ctx.createLinearGradient(0,-H*0.55,0,0);
+  finGrad.addColorStop(0, style.fin);
+  finGrad.addColorStop(0.5, 'rgba(255,180,255,0.5)');
+  finGrad.addColorStop(1, 'rgba(255,255,255,0.3)');
   ctx.fillStyle=finGrad;
-  ctx.beginPath(); ctx.moveTo(-L*0.02,-H*0.48);
-  ctx.quadraticCurveTo(L*0.12,-H*0.82 + flap, L*0.26,-H*0.18);
-  ctx.quadraticCurveTo(L*0.02,-H*0.16,-L*0.02,-H*0.48); ctx.fill();
-  ctx.beginPath(); ctx.moveTo(0,H*0.40);
-  ctx.quadraticCurveTo(L*0.18,H*0.76 + flap, L*0.24,H*0.18);
-  ctx.quadraticCurveTo(L*0.02,H*0.20,0,H*0.40); ctx.fill(); restoreAlpha();
+  ctx.beginPath(); ctx.moveTo(-L*0.02,-H*0.50);
+  ctx.quadraticCurveTo(L*0.14,-H*0.88 + flap, L*0.28,-H*0.20);
+  ctx.quadraticCurveTo(L*0.02,-H*0.18,-L*0.02,-H*0.50); ctx.fill();
 
-  scales(L,H,0.94,0.22,1.2); specular(L*0.12,-H*0.08,H*0.52,0.60);
-  eye(L*0.30,-H*0.10, Math.max(2.3,size*0.11));
+  const finGrad2 = ctx.createLinearGradient(0,H*0.55,0,0);
+  finGrad2.addColorStop(0, style.fin);
+  finGrad2.addColorStop(0.5, 'rgba(100,220,255,0.5)');
+  finGrad2.addColorStop(1, 'rgba(255,255,255,0.3)');
+  ctx.fillStyle=finGrad2;
+  ctx.beginPath(); ctx.moveTo(0,H*0.42);
+  ctx.quadraticCurveTo(L*0.20,H*0.80 + flap, L*0.26,H*0.20);
+  ctx.quadraticCurveTo(L*0.02,H*0.22,0,H*0.42); ctx.fill(); restoreAlpha();
+
+  scales(L,H,0.96,0.24,1.3); specular(L*0.14,-H*0.09,H*0.54,0.65);
+  eye(L*0.32,-H*0.11, Math.max(2.5,size*0.115));
   return {L,H};
 }
 
