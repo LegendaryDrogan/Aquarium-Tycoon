@@ -1,12 +1,17 @@
 /* ==========================================
-   Aquarium Tycoon (v2.7.0 Enhanced)
+   Aquarium Tycoon (v2.8.0)
+   - Mobile-friendly responsive design
+   - Touch controls optimized
+   - Password-protected automation features
    - Enhanced sprite rendering with realistic details
-   - Improved eyes, scales, fins, and body shading
-   - Better animations and visual effects
    - Modular file structure for easier development
    ========================================== */
-const GAME_VERSION = '2.7.0';
+const GAME_VERSION = '2.8.0';
 const PRESTIGE_BASE = 10_000_000; // starting prestige price
+const AUTOMATION_PASSWORD = 'Ch@s3R0cks'; // Password for automation features
+
+// Automation unlock state
+let automationUnlocked = false;
 
 /* ---- Backgrounds ---- */
 const backgrounds = [
@@ -532,51 +537,91 @@ function renderShop(){
       listEl.appendChild(div);
     });
 
-    // Automations
-    const a = tInst.automation || (tInst.automation = { autoSell:false, autoBuy:false, mode:'smart', target:'guppy', reserve:0 });
+    // Automations - Password Protected
     const auto = document.createElement('div'); auto.className='card';
-    auto.innerHTML = `
-      <div>
-        <div class="title">Automations</div>
-        <div class="muted">Per-tank toggles that run continuously in the background.</div>
-        <div class="tiny">Auto-Sell sells fish at ≥80% maturity. Auto-Buy keeps capacity full.</div>
-      </div>
-      <div style="display:flex;flex-direction:column;gap:8px;align-items:flex-end">
-        <button id="togSell" class="small toggle ${a.autoSell?'on':''}">${a.autoSell?'Auto-Sell: ON':'Auto-Sell: OFF'}</button>
-        <button id="togBuy" class="small toggle ${a.autoBuy?'on':''}">${a.autoBuy?'Auto-Buy: ON':'Auto-Buy: OFF'}</button>
-      </div>`;
-    listEl.appendChild(auto);
 
-    const controls = document.createElement('div'); controls.className='card';
-    const speciesOpts = species.map(s=>`<option value="${s.id}" ${s.id===a.target?'selected':''}>${s.name}</option>`).join('');
-    controls.innerHTML = `
-      <div>
-        <div class="title">Auto-Buy Settings</div>
-        <div class="muted">In <b>Smart</b> mode, the tank buys the most expensive fish it can afford (then cheaper ones) while keeping your reserve intact.</div>
-        <div style="display:flex;gap:12px;margin-top:6px;align-items:center;flex-wrap:wrap">
-          <label>Mode:</label>
-          <select id="autoMode">
-            <option value="smart" ${a.mode==='smart'?'selected':''}>Smart (Most Expensive First)</option>
-            <option value="target" ${a.mode!=='smart'?'selected':''}>Target Species Only</option>
-          </select>
-          <label>Target:</label>
-          <select id="autoTarget" ${a.mode==='smart'?'disabled':''}>${speciesOpts}</select>
-          <label>Reserve:</label>
-          <input id="autoReserve" type="number" min="0" step="10" value="${a.reserve}">
+    if(!automationUnlocked){
+      // Show password prompt
+      auto.innerHTML = `
+        <div>
+          <div class="title">🔒 Automations (Locked)</div>
+          <div class="muted">Advanced automation features are password-protected.</div>
+          <div style="margin-top:8px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <input type="password" id="autoPassword" placeholder="Enter password" style="flex:1;min-width:150px">
+            <button id="unlockAuto" class="btn-accent small">Unlock</button>
+          </div>
+        </div>`;
+      listEl.appendChild(auto);
+
+      auto.querySelector('#unlockAuto').onclick = ()=>{
+        const pw = auto.querySelector('#autoPassword').value;
+        if(pw === AUTOMATION_PASSWORD){
+          automationUnlocked = true;
+          log('✅ Automation features unlocked!');
+          renderShop(); // Refresh to show automations
+        } else {
+          log('❌ Incorrect password. Access denied.');
+          auto.querySelector('#autoPassword').value = '';
+          auto.querySelector('#autoPassword').style.borderColor = '#ff4444';
+          setTimeout(()=>{ auto.querySelector('#autoPassword').style.borderColor = ''; }, 1000);
+        }
+      };
+
+      // Allow Enter key to unlock
+      auto.querySelector('#autoPassword').onkeypress = (e)=>{
+        if(e.key === 'Enter') auto.querySelector('#unlockAuto').click();
+      };
+    } else {
+      // Show full automation controls
+      const a = tInst.automation || (tInst.automation = { autoSell:false, autoBuy:false, mode:'smart', target:'guppy', reserve:0 });
+      auto.innerHTML = `
+        <div>
+          <div class="title">🔓 Automations (Unlocked)</div>
+          <div class="muted">Per-tank toggles that run continuously in the background.</div>
+          <div class="tiny">Auto-Sell sells fish at ≥80% maturity. Auto-Buy keeps capacity full.</div>
         </div>
-      </div>
-      <div style="display:flex;align-items:center"><span class="badge">Tank: ${tInst.name}</span></div>`;
-    listEl.appendChild(controls);
+        <div style="display:flex;flex-direction:column;gap:8px;align-items:flex-end">
+          <button id="togSell" class="small toggle ${a.autoSell?'on':''}">${a.autoSell?'Auto-Sell: ON':'Auto-Sell: OFF'}</button>
+          <button id="togBuy" class="small toggle ${a.autoBuy?'on':''}">${a.autoBuy?'Auto-Buy: ON':'Auto-Buy: OFF'}</button>
+        </div>`;
+      listEl.appendChild(auto);
 
-    controls.querySelector('#autoMode').onchange = (e)=>{
-      a.mode = e.target.value;
-      controls.querySelector('#autoTarget').disabled = (a.mode==='smart');
-      log(`${tInst.name}: Auto-Buy mode → ${a.mode.toUpperCase()}.`); save();
-    };
-    controls.querySelector('#autoTarget').onchange = (e)=>{ a.target = e.target.value; log(`${tInst.name}: Auto-Buy target set to ${species.find(s=>s.id===a.target).name}.`); save(); };
-    controls.querySelector('#autoReserve').onchange = (e)=>{ a.reserve = Math.max(0, parseInt(e.target.value||0,10)); log(`${tInst.name}: Auto-Buy reserve set to ${fmt(a.reserve)}.`); save(); };
-    auto.querySelector('#togSell').onclick = (e)=>{ a.autoSell = !a.autoSell; e.target.classList.toggle('on', a.autoSell); e.target.textContent = a.autoSell?'Auto-Sell: ON':'Auto-Sell: OFF'; log(`${tInst.name}: Auto-Sell ${a.autoSell?'enabled':'disabled'}.`); save(); };
-    auto.querySelector('#togBuy').onclick  = (e)=>{ a.autoBuy  = !a.autoBuy;  e.target.classList.toggle('on', a.autoBuy ); e.target.textContent  = a.autoBuy?'Auto-Buy: ON':'Auto-Buy: OFF';  log(`${tInst.name}: Auto-Buy ${a.autoBuy?'enabled':'disabled'}.`); save(); };
+      auto.querySelector('#togSell').onclick = (e)=>{ a.autoSell = !a.autoSell; e.target.classList.toggle('on', a.autoSell); e.target.textContent = a.autoSell?'Auto-Sell: ON':'Auto-Sell: OFF'; log(`${tInst.name}: Auto-Sell ${a.autoSell?'enabled':'disabled'}.`); save(); };
+      auto.querySelector('#togBuy').onclick  = (e)=>{ a.autoBuy  = !a.autoBuy;  e.target.classList.toggle('on', a.autoBuy ); e.target.textContent  = a.autoBuy?'Auto-Buy: ON':'Auto-Buy: OFF';  log(`${tInst.name}: Auto-Buy ${a.autoBuy?'enabled':'disabled'}.`); save(); };
+    }
+
+    // Only show automation settings if unlocked
+    if(automationUnlocked){
+      const a = tInst.automation || (tInst.automation = { autoSell:false, autoBuy:false, mode:'smart', target:'guppy', reserve:0 });
+      const controls = document.createElement('div'); controls.className='card';
+      const speciesOpts = species.map(s=>`<option value="${s.id}" ${s.id===a.target?'selected':''}>${s.name}</option>`).join('');
+      controls.innerHTML = `
+        <div>
+          <div class="title">Auto-Buy Settings</div>
+          <div class="muted">In <b>Smart</b> mode, the tank buys the most expensive fish it can afford (then cheaper ones) while keeping your reserve intact.</div>
+          <div style="display:flex;gap:12px;margin-top:6px;align-items:center;flex-wrap:wrap">
+            <label>Mode:</label>
+            <select id="autoMode">
+              <option value="smart" ${a.mode==='smart'?'selected':''}>Smart (Most Expensive First)</option>
+              <option value="target" ${a.mode!=='smart'?'selected':''}>Target Species Only</option>
+            </select>
+            <label>Target:</label>
+            <select id="autoTarget" ${a.mode==='smart'?'disabled':''}>${speciesOpts}</select>
+            <label>Reserve:</label>
+            <input id="autoReserve" type="number" min="0" step="10" value="${a.reserve}">
+          </div>
+        </div>
+        <div style="display:flex;align-items:center"><span class="badge">Tank: ${tInst.name}</span></div>`;
+      listEl.appendChild(controls);
+
+      controls.querySelector('#autoMode').onchange = (e)=>{
+        a.mode = e.target.value;
+        controls.querySelector('#autoTarget').disabled = (a.mode==='smart');
+        log(`${tInst.name}: Auto-Buy mode → ${a.mode.toUpperCase()}.`); save();
+      };
+      controls.querySelector('#autoTarget').onchange = (e)=>{ a.target = e.target.value; log(`${tInst.name}: Auto-Buy target set to ${species.find(s=>s.id===a.target).name}.`); save(); };
+      controls.querySelector('#autoReserve').onchange = (e)=>{ a.reserve = Math.max(0, parseInt(e.target.value||0,10)); log(`${tInst.name}: Auto-Buy reserve set to ${fmt(a.reserve)}.`); save(); };
+    }
   }
 
   if(activeTab==='backgrounds'){

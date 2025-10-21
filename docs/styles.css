@@ -591,7 +591,7 @@ canvas {
   margin-top: 10px;
 }
 
-/* Responsive Design */
+/* Responsive Design - Enhanced for Mobile */
 @media (max-width: 1024px) {
   .app {
     grid-template-columns: 280px 1fr;
@@ -603,14 +603,152 @@ canvas {
     grid-template-columns: 1fr;
     grid-template-rows: auto auto 1fr;
     grid-template-areas: 'top' 'tank' 'shop';
+    padding: 8px;
+    gap: 8px;
+  }
+
+  .topbar {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto auto;
+    padding: 8px;
+    gap: 8px;
+  }
+
+  .stats {
+    justify-content: center;
+    gap: 6px;
+  }
+
+  .stat {
+    padding: 6px 8px;
+    font-size: 0.85em;
+  }
+
+  .controls {
+    justify-content: center;
+    gap: 6px;
+  }
+
+  button {
+    padding: 8px 12px;
+    font-size: 0.9em;
   }
 
   .shop {
-    max-height: 40vh;
+    max-height: 45vh;
+    min-height: 200px;
+  }
+
+  .tank {
+    min-height: 300px;
+    order: -1; /* Show tank first on mobile */
+  }
+
+  .overlay {
+    flex-direction: column;
+    gap: 4px;
+    left: 5px;
+    bottom: 5px;
+  }
+
+  .overlay .pill {
+    font-size: 0.75em;
+    padding: 4px 6px;
   }
 
   .logPanel {
     width: 90vw;
     max-width: 90vw;
+    left: 5vw;
+    bottom: 8px;
+    height: 25vh;
+    min-height: 150px;
+  }
+
+  .card {
+    padding: 8px;
+    font-size: 0.9em;
+  }
+
+  .tabs {
+    padding: 6px 8px;
+    gap: 4px;
+    overflow-x: auto;
+  }
+
+  .tab {
+    padding: 6px 8px;
+    font-size: 0.85em;
+    white-space: nowrap;
+  }
+
+  .modal {
+    width: 95vw;
+    padding: 12px;
+  }
+}
+
+/* Mobile Touch Improvements */
+@media (hover: none) and (pointer: coarse) {
+  /* Larger touch targets */
+  button {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  .tab {
+    min-height: 44px;
+  }
+
+  /* Remove hover effects on touch devices */
+  button:hover::before {
+    display: none;
+  }
+
+  /* Better touch feedback */
+  button:active {
+    transform: scale(0.95);
+    opacity: 0.8;
+  }
+
+  .card:active {
+    transform: translateX(0);
+    background: #0e1f38;
+  }
+}
+
+/* Small phones */
+@media (max-width: 480px) {
+  .app {
+    padding: 4px;
+    gap: 4px;
+  }
+
+  .topbar {
+    padding: 6px;
+  }
+
+  .stat {
+    font-size: 0.75em;
+    padding: 4px 6px;
+  }
+
+  button {
+    padding: 6px 10px;
+    font-size: 0.85em;
+  }
+
+  .shop h3 {
+    font-size: 1em;
+    padding: 8px 10px;
+  }
+
+  .tank {
+    min-height: 250px;
+  }
+
+  .overlay .pill {
+    font-size: 0.7em;
+    display: none; /* Hide tips on very small screens */
   }
 }
