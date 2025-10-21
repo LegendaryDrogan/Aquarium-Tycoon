@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is **Aquarium Tycoon** (v4.0.0), an incremental browser game built with vanilla JavaScript and HTML5 Canvas. The project uses a clean, modular file structure optimized for production.
+This is **Aquarium Tycoon** (v5.0.0), an incremental browser game built with vanilla JavaScript and HTML5 Canvas. This version features a complete visual overhaul with highly detailed, realistic fish sprites, enhanced backgrounds with immersive graphics, and a modern, polished UI design. The project uses a clean, modular file structure optimized for production.
 
 ## Architecture
 

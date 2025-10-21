@@ -1,15 +1,15 @@
 /* ==========================================
-   Aquarium Tycoon (v4.0.0) - Clean Release
-   - CLEAN PROJECT STRUCTURE - Removed legacy files and duplicates
-   - ENHANCED BACKGROUNDS - Stable, detailed, non-glitchy visuals
-   - PROCEDURAL MUSIC SYSTEM - Real melodic ambient music!
-   - PIXEL ART SPRITES - Higher resolution retro aesthetic
+   Aquarium Tycoon (v5.0.0) - Visual Overhaul
+   - REALISTIC FISH SPRITES - Highly detailed pixel art matching real-life counterparts
+   - ENHANCED BACKGROUNDS - Beautiful, immersive aquarium environments
+   - MODERN UI DESIGN - Polished interface with refined aesthetics
+   - CLEAN PROJECT STRUCTURE - Organized and production-ready
+   - PROCEDURAL MUSIC SYSTEM - Real melodic ambient music
    - Background tank simulation: all tanks grow fish & run automations
    - Debug speed moved to Automations (password-protected)
    - Responsive design optimized for all screen sizes
-   - Production-ready codebase
    ========================================== */
-const GAME_VERSION = '4.0.0';
+const GAME_VERSION = '5.0.0';
 const PRESTIGE_BASE = 10_000_000; // starting prestige price
 const AUTOMATION_PASSWORD = 'HAX'; // Password for automation features
 
@@ -1431,21 +1431,62 @@ function drawBackgroundBase(){
 
   switch(id){
     case 'default': {
-      // Layered blue gradient
+      // Enhanced layered blue gradient with depth
       const g=ctx.createLinearGradient(0,0,0,viewH);
-      g.addColorStop(0,'#4da6ff');
-      g.addColorStop(0.5,'#2b7fcc');
+      g.addColorStop(0,'#6fb3ff');
+      g.addColorStop(0.25,'#4da6ff');
+      g.addColorStop(0.6,'#2b7fcc');
+      g.addColorStop(0.85,'#1a5c99');
       g.addColorStop(1,'#002b66');
       ctx.fillStyle=g;
       ctx.fillRect(0,0,viewW,viewH);
 
-      // Sandy bottom with texture
-      ctx.fillStyle='#c2a875';
-      ctx.fillRect(0,viewH*0.85,viewW,viewH*0.15);
-      ctx.fillStyle='rgba(160,130,80,0.3)';
-      for(let x=0; x<viewW; x+=40){
-        ctx.fillRect(x,viewH*0.85,20,viewH*0.15);
-      }
+      // Enhanced sandy bottom with realistic texture
+      const sandBase = viewH * 0.82;
+
+      // Sand layers with depth
+      const sandGrad = ctx.createLinearGradient(0, sandBase, 0, viewH);
+      sandGrad.addColorStop(0, '#d4b890');
+      sandGrad.addColorStop(0.3, '#c2a875');
+      sandGrad.addColorStop(0.7, '#b59965');
+      sandGrad.addColorStop(1, '#a08855');
+      ctx.fillStyle = sandGrad;
+      ctx.fillRect(0, sandBase, viewW, viewH - sandBase);
+
+      // Sand ripples and texture
+      const ripples = getStableDecor('default_sand', 15, 999);
+      ctx.save();
+      ctx.globalAlpha = 0.2;
+      ripples.forEach((ripple, i) => {
+        const y = sandBase + ripple.yPct * (viewH - sandBase) * 0.6;
+        const x = ripple.xPct * viewW;
+        const width = 60 + ripple.sizeFactor * 100;
+
+        ctx.fillStyle = i % 2 ? 'rgba(220,200,170,0.5)' : 'rgba(180,150,120,0.5)';
+        ctx.beginPath();
+        ctx.ellipse(x, y, width, 3, 0, 0, Math.PI * 2);
+        ctx.fill();
+      });
+      ctx.restore();
+
+      // Small pebbles on sand
+      const pebbles = getStableDecor('default_pebbles', 8, 888);
+      pebbles.forEach(pebble => {
+        const x = pebble.xPct * viewW;
+        const y = sandBase + pebble.yPct * (viewH - sandBase) * 0.5;
+        const r = 3 + pebble.sizeFactor * 5;
+
+        ctx.fillStyle = `hsl(${30 + pebble.hue * 0.1}, 25%, 40%)`;
+        ctx.beginPath();
+        ctx.arc(x, y, r, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Highlight on pebble
+        ctx.fillStyle = 'rgba(255,255,255,0.3)';
+        ctx.beginPath();
+        ctx.arc(x - r * 0.3, y - r * 0.3, r * 0.4, 0, Math.PI * 2);
+        ctx.fill();
+      });
       break;
     }
 
@@ -1476,36 +1517,106 @@ function drawBackgroundBase(){
     }
 
     case 'coral': {
-      // Coral reef colors
+      // Enhanced coral reef with vibrant colors
       const g=ctx.createLinearGradient(0,0,0,viewH);
-      g.addColorStop(0,'#2f6d7a');
-      g.addColorStop(0.7,'#1a4550');
+      g.addColorStop(0,'#3d8a9e');
+      g.addColorStop(0.4,'#2f6d7a');
+      g.addColorStop(0.75,'#1a4550');
       g.addColorStop(1,'#10333a');
       ctx.fillStyle=g;
       ctx.fillRect(0,0,viewW,viewH);
 
-      // Stable coral formations
-      const corals = getStableDecor('coral', 8, 456);
-      ctx.save();
-      ctx.globalAlpha=0.7;
-      corals.forEach(coral => {
+      // Sandy bottom with coral debris
+      ctx.fillStyle='rgba(200,180,140,0.2)';
+      ctx.fillRect(0, viewH * 0.88, viewW, viewH * 0.12);
+
+      // Large coral formations (background layer)
+      const largeCoral = getStableDecor('coral_large', 5, 456);
+      largeCoral.forEach(coral => {
         const x = coral.xPct * viewW;
-        const y = viewH * 0.85 + coral.offset * 0.1;
-        const r = (coral.sizeFactor * 50 + 20) * 0.5;
+        const y = viewH * 0.88;
+        const w = 80 + coral.sizeFactor * 100;
+        const h = 60 + coral.sizeFactor * 80;
 
-        // Coral heads with color variation
-        ctx.fillStyle = `hsl(${20 + coral.hue * 0.2}, 40%, 35%)`;
+        // Base coral structure (brown/tan)
+        ctx.fillStyle = `hsl(${25 + coral.hue * 0.1}, 35%, 30%)`;
         ctx.beginPath();
-        ctx.ellipse(x, y, r*1.3, r, 0, 0, Math.PI*2);
+        ctx.ellipse(x, y, w * 0.6, h * 0.5, 0, 0, Math.PI, false);
         ctx.fill();
 
-        // Smaller coral branches
-        ctx.fillStyle = `hsl(${30 + coral.hue * 0.15}, 45%, 40%)`;
-        ctx.beginPath();
-        ctx.ellipse(x+r*0.6, y+5, r*0.7, r*0.5, 0, 0, Math.PI*2);
-        ctx.fill();
+        // Coral polyps (colorful)
+        const coralColors = [
+          { h: 340, s: 65, l: 55 }, // Pink
+          { h: 30, s: 75, l: 50 },  // Orange
+          { h: 280, s: 60, l: 50 }, // Purple
+          { h: 180, s: 50, l: 45 }  // Teal
+        ];
+        const colorPalette = coralColors[Math.floor(coral.hue * 4 / 360)];
+
+        // Multiple coral heads
+        for (let i = 0; i < 4; i++) {
+          const offsetX = (i - 1.5) * (w * 0.3);
+          const polyp = getStableDecor(`coral_polyp_${coral.offset}_${i}`, 1, i * 7)[0];
+
+          ctx.save();
+          ctx.globalAlpha = 0.85;
+
+          // Main polyp body
+          ctx.fillStyle = `hsl(${colorPalette.h + polyp.hue * 0.1}, ${colorPalette.s}%, ${colorPalette.l}%)`;
+          ctx.beginPath();
+          ctx.ellipse(x + offsetX, y - h * 0.3, w * 0.15, h * 0.4, 0, 0, Math.PI * 2);
+          ctx.fill();
+
+          // Tentacles/branches
+          ctx.strokeStyle = `hsl(${colorPalette.h + polyp.hue * 0.1}, ${colorPalette.s - 10}%, ${colorPalette.l + 10}%)`;
+          ctx.lineWidth = 3;
+          ctx.lineCap = 'round';
+
+          for (let j = 0; j < 5; j++) {
+            const angle = (j / 5) * Math.PI - Math.PI * 0.5;
+            const length = h * 0.2 * (0.7 + polyp.sizeFactor * 0.6);
+            ctx.beginPath();
+            ctx.moveTo(x + offsetX, y - h * 0.5);
+            ctx.lineTo(
+              x + offsetX + Math.cos(angle) * length,
+              y - h * 0.5 + Math.sin(angle) * length
+            );
+            ctx.stroke();
+          }
+
+          // Highlight
+          ctx.globalAlpha = 0.4;
+          ctx.fillStyle = `hsl(${colorPalette.h}, ${colorPalette.s}%, ${colorPalette.l + 25}%)`;
+          ctx.beginPath();
+          ctx.ellipse(x + offsetX - w * 0.05, y - h * 0.4, w * 0.08, h * 0.2, 0, 0, Math.PI * 2);
+          ctx.fill();
+
+          ctx.restore();
+        }
       });
-      ctx.restore();
+
+      // Small coral clusters (foreground)
+      const smallCoral = getStableDecor('coral_small', 12, 789);
+      smallCoral.forEach(coral => {
+        const x = coral.xPct * viewW;
+        const y = viewH * 0.90 + coral.yPct * (viewH * 0.08);
+        const r = 8 + coral.sizeFactor * 15;
+
+        // Brain coral or round coral
+        ctx.fillStyle = `hsl(${150 + coral.hue * 0.3}, 45%, 35%)`;
+        ctx.beginPath();
+        ctx.arc(x, y, r, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Texture lines
+        ctx.strokeStyle = `hsl(${150 + coral.hue * 0.3}, 45%, 25%)`;
+        ctx.lineWidth = 1;
+        for (let i = 0; i < 3; i++) {
+          ctx.beginPath();
+          ctx.arc(x, y, r * (0.3 + i * 0.25), 0, Math.PI * 2);
+          ctx.stroke();
+        }
+      });
       break;
     }
 
@@ -1571,41 +1682,128 @@ function drawBackgroundBase(){
     }
 
     case 'night': {
-      // Night ocean
+      // Enhanced night ocean with atmospheric depth
       const g=ctx.createLinearGradient(0,0,0,viewH);
-      g.addColorStop(0,'#001f3f');
+      g.addColorStop(0,'#0a1929');
+      g.addColorStop(0.3,'#001f3f');
       g.addColorStop(0.7,'#001020');
       g.addColorStop(1,'#000000');
       ctx.fillStyle=g;
       ctx.fillRect(0,0,viewW,viewH);
 
-      // Moon
+      // Realistic moon with craters
       ctx.save();
-      ctx.globalCompositeOperation='screen';
       const moonX = viewW * 0.75;
       const moonY = viewH * 0.15;
       const moonR = 80;
 
-      const moonGrad = ctx.createRadialGradient(moonX, moonY, moonR * 0.3, moonX, moonY, moonR);
-      moonGrad.addColorStop(0, 'rgba(240,240,255,0.8)');
-      moonGrad.addColorStop(0.5, 'rgba(200,220,255,0.4)');
-      moonGrad.addColorStop(1, 'rgba(200,220,255,0)');
+      // Moon glow/halo
+      ctx.globalCompositeOperation='screen';
+      const moonHalo = ctx.createRadialGradient(moonX, moonY, moonR * 0.5, moonX, moonY, moonR * 2);
+      moonHalo.addColorStop(0, 'rgba(220,230,255,0.15)');
+      moonHalo.addColorStop(0.5, 'rgba(200,220,255,0.08)');
+      moonHalo.addColorStop(1, 'rgba(200,220,255,0)');
+      ctx.fillStyle = moonHalo;
+      ctx.fillRect(moonX - moonR * 2, moonY - moonR * 2, moonR * 4, moonR * 4);
+
+      // Moon body
+      ctx.globalCompositeOperation='source-over';
+      const moonGrad = ctx.createRadialGradient(
+        moonX - moonR * 0.3, moonY - moonR * 0.3, 0,
+        moonX, moonY, moonR
+      );
+      moonGrad.addColorStop(0, 'rgba(255,255,245,0.95)');
+      moonGrad.addColorStop(0.7, 'rgba(230,235,245,0.9)');
+      moonGrad.addColorStop(1, 'rgba(200,210,230,0.85)');
       ctx.fillStyle = moonGrad;
       ctx.beginPath();
       ctx.arc(moonX, moonY, moonR, 0, Math.PI * 2);
       ctx.fill();
 
-      // Stars
-      const stars = getStableDecor('night', 20, 111);
-      ctx.fillStyle = 'rgba(255,255,255,0.8)';
-      stars.forEach(star => {
-        const y = star.yPct * viewH;
-        if(y < viewH * 0.4){ // Only in upper portion
-          const twinkle = Math.sin(time * 2 + star.offset) * 0.3 + 0.7;
-          ctx.globalAlpha = twinkle;
-          ctx.fillRect(star.xPct * viewW, y, 2, 2);
+      // Moon craters
+      const craters = getStableDecor('moon_craters', 8, 555);
+      craters.forEach(crater => {
+        const dx = (crater.xPct - 0.5) * moonR * 1.6;
+        const dy = (crater.yPct - 0.5) * moonR * 1.6;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+
+        if (dist < moonR * 0.85) {
+          const cx = moonX + dx;
+          const cy = moonY + dy;
+          const cr = 5 + crater.sizeFactor * 15;
+
+          // Crater shadow
+          ctx.fillStyle = 'rgba(180,185,200,0.4)';
+          ctx.beginPath();
+          ctx.arc(cx, cy, cr, 0, Math.PI * 2);
+          ctx.fill();
+
+          // Crater highlight rim
+          ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.arc(cx - cr * 0.1, cy - cr * 0.1, cr * 0.9, 0, Math.PI * 2);
+          ctx.stroke();
         }
       });
+
+      // Enhanced starfield with varying sizes and brightness
+      ctx.globalCompositeOperation='screen';
+
+      // Large distant stars
+      const stars = getStableDecor('night_stars', 40, 111);
+      stars.forEach(star => {
+        const y = star.yPct * viewH;
+        if(y < viewH * 0.45){ // Only in upper portion
+          const x = star.xPct * viewW;
+          const twinkle = Math.sin(time * (1.5 + star.offset * 0.01) + star.offset) * 0.4 + 0.6;
+          const size = star.sizeFactor > 0.7 ? 3 : (star.sizeFactor > 0.4 ? 2 : 1);
+
+          // Star color (slight variation)
+          const starHue = 200 + star.hue * 0.15;
+          ctx.fillStyle = `hsla(${starHue}, 30%, 95%, ${twinkle})`;
+
+          if (size > 2) {
+            // Large star with cross effect
+            ctx.globalAlpha = twinkle;
+            ctx.fillRect(x - 1, y - 1, 3, 3);
+            ctx.fillRect(x - 2, y, 1, 1);
+            ctx.fillRect(x + 2, y, 1, 1);
+            ctx.fillRect(x, y - 2, 1, 1);
+            ctx.fillRect(x, y + 2, 1, 1);
+          } else {
+            ctx.globalAlpha = twinkle * 0.9;
+            ctx.fillRect(x, y, size, size);
+          }
+        }
+      });
+
+      // Milky Way effect (faint)
+      ctx.globalAlpha = 0.08;
+      const milkyWayGrad = ctx.createLinearGradient(0, 0, viewW, viewH * 0.4);
+      milkyWayGrad.addColorStop(0, 'rgba(200,220,255,0)');
+      milkyWayGrad.addColorStop(0.5, 'rgba(220,230,255,0.8)');
+      milkyWayGrad.addColorStop(1, 'rgba(200,220,255,0)');
+      ctx.fillStyle = milkyWayGrad;
+      ctx.fillRect(0, 0, viewW, viewH * 0.4);
+
+      ctx.restore();
+
+      // Dark seabed with moonlight reflection
+      ctx.fillStyle = 'rgba(10,20,40,0.6)';
+      ctx.fillRect(0, viewH * 0.85, viewW, viewH * 0.15);
+
+      // Moonlight on water (shimmering path)
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighten';
+      ctx.globalAlpha = 0.1;
+      const shimmer = Math.sin(time * 0.8) * 0.5 + 0.5;
+      const pathGrad = ctx.createLinearGradient(moonX - 100, moonY, moonX - 50, viewH);
+      pathGrad.addColorStop(0, 'rgba(220,230,255,0)');
+      pathGrad.addColorStop(0.3, `rgba(220,230,255,${0.3 * shimmer})`);
+      pathGrad.addColorStop(1, 'rgba(220,230,255,0)');
+      ctx.fillStyle = pathGrad;
+      ctx.fillRect(moonX - 150, moonY, 200, viewH - moonY);
       ctx.restore();
       break;
     }
@@ -1813,6 +2011,227 @@ function drawBackgroundEffects(){
   }
 }
 
+/* ---- Equipment Visualization ---- */
+function drawEquipment() {
+  const t = currentTank();
+  if (!t || !t.items) return;
+
+  const time = Date.now() * 0.001;
+
+  // Auto Feeder (top right corner)
+  const feederLevel = t.items.feeder || 0;
+  if (feederLevel > 0) {
+    const x = viewW - 80;
+    const y = 40;
+    const size = 40 + feederLevel * 2;
+
+    ctx.save();
+    // Feeder box
+    ctx.fillStyle = 'rgba(100, 120, 140, 0.8)';
+    ctx.strokeStyle = 'rgba(150, 170, 190, 0.9)';
+    ctx.lineWidth = 2;
+    ctx.fillRect(x - size/2, y - size/2, size, size);
+    ctx.strokeRect(x - size/2, y - size/2, size, size);
+
+    // Feeder hopper/funnel
+    ctx.fillStyle = 'rgba(120, 140, 160, 0.85)';
+    ctx.beginPath();
+    ctx.moveTo(x - size/3, y + size/2);
+    ctx.lineTo(x + size/3, y + size/2);
+    ctx.lineTo(x + size/6, y + size);
+    ctx.lineTo(x - size/6, y + size);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    // Food particles falling (animated)
+    if (feederLevel >= 5) {
+      ctx.fillStyle = 'rgba(255, 200, 100, 0.7)';
+      for (let i = 0; i < Math.min(feederLevel / 3, 8); i++) {
+        const offset = (time * 80 + i * 30) % 120;
+        const px = x + Math.sin(time + i) * 8;
+        const py = y + size + offset;
+        if (py < viewH - 100) {
+          ctx.beginPath();
+          ctx.arc(px, py, 2, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+    }
+
+    // Level indicator
+    ctx.fillStyle = 'rgba(100, 255, 100, 0.3)';
+    const fillHeight = (size * 0.8) * (feederLevel / 25);
+    ctx.fillRect(x - size/2 + 4, y + size/2 - fillHeight - 4, size - 8, fillHeight);
+
+    ctx.restore();
+  }
+
+  // Bio Filter (top left corner)
+  const filterLevel = t.items.filter || 0;
+  if (filterLevel > 0) {
+    const x = 80;
+    const y = 40;
+    const size = 45 + filterLevel * 1.5;
+
+    ctx.save();
+    // Filter housing
+    ctx.fillStyle = 'rgba(60, 80, 100, 0.8)';
+    ctx.strokeStyle = 'rgba(100, 140, 180, 0.9)';
+    ctx.lineWidth = 2;
+    ctx.fillRect(x - size/2, y - size/2, size, size * 1.2);
+    ctx.strokeRect(x - size/2, y - size/2, size, size * 1.2);
+
+    // Filter grille lines
+    ctx.strokeStyle = 'rgba(120, 160, 200, 0.6)';
+    ctx.lineWidth = 1;
+    for (let i = 1; i < 5; i++) {
+      const gy = y - size/2 + (size * 1.2 * i / 5);
+      ctx.beginPath();
+      ctx.moveTo(x - size/2 + 5, gy);
+      ctx.lineTo(x + size/2 - 5, gy);
+      ctx.stroke();
+    }
+
+    // Bubbles from filter
+    if (filterLevel >= 3) {
+      ctx.fillStyle = 'rgba(200, 230, 255, 0.5)';
+      for (let i = 0; i < Math.min(filterLevel / 2, 10); i++) {
+        const offset = (time * 60 + i * 25) % 100;
+        const bx = x + Math.sin(time * 2 + i) * 15;
+        const by = y + size * 0.6 + offset;
+        if (by < viewH - 100) {
+          ctx.beginPath();
+          ctx.arc(bx, by, 1.5 + Math.sin(time + i) * 0.5, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+    }
+
+    // Power indicator light
+    const pulse = Math.sin(time * 3) * 0.3 + 0.7;
+    ctx.fillStyle = `rgba(100, 255, 150, ${pulse * 0.8})`;
+    ctx.beginPath();
+    ctx.arc(x + size/2 - 8, y - size/2 + 8, 3, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.restore();
+  }
+
+  // Heater (left side, vertical)
+  const heaterLevel = t.items.heater || 0;
+  if (heaterLevel > 0) {
+    const x = 50;
+    const y = viewH * 0.5;
+    const width = 15 + heaterLevel * 0.5;
+    const height = 80 + heaterLevel * 3;
+
+    ctx.save();
+    // Heater tube
+    ctx.fillStyle = 'rgba(180, 40, 40, 0.7)';
+    ctx.strokeStyle = 'rgba(220, 80, 80, 0.9)';
+    ctx.lineWidth = 2;
+    ctx.fillRect(x - width/2, y - height/2, width, height);
+    ctx.strokeRect(x - width/2, y - height/2, width, height);
+
+    // Heating coil visualization
+    ctx.strokeStyle = 'rgba(255, 150, 100, 0.8)';
+    ctx.lineWidth = 2;
+    for (let i = 0; i < 5; i++) {
+      const cy = y - height/2 + height * (i + 0.5) / 5;
+      ctx.beginPath();
+      ctx.moveTo(x - width/2 + 3, cy);
+      ctx.lineTo(x + width/2 - 3, cy);
+      ctx.stroke();
+    }
+
+    // Heat waves rising
+    if (heaterLevel >= 5) {
+      ctx.strokeStyle = 'rgba(255, 200, 100, 0.3)';
+      ctx.lineWidth = 1.5;
+      for (let i = 0; i < 3; i++) {
+        const waveOffset = (time * 50 + i * 30) % 80;
+        const wy = y - height/2 - waveOffset;
+        if (wy > 60) {
+          ctx.beginPath();
+          ctx.moveTo(x - 5, wy);
+          ctx.quadraticCurveTo(x + Math.sin(time * 2 + i) * 8, wy - 15, x - 5, wy - 30);
+          ctx.stroke();
+        }
+      }
+    }
+
+    // Temperature indicator
+    const tempPct = Math.min(heaterLevel / 25, 1);
+    ctx.fillStyle = `rgba(255, ${255 - tempPct * 155}, 0, 0.4)`;
+    const tempHeight = height * 0.8 * tempPct;
+    ctx.fillRect(x - width/2 + 2, y + height/2 - tempHeight - 2, width - 4, tempHeight);
+
+    ctx.restore();
+  }
+
+  // Coral Decoration (bottom, scattered)
+  const coralLevel = t.items.coral || 0;
+  if (coralLevel > 0) {
+    const corals = getStableDecor('equipment_coral', Math.min(coralLevel, 15), 777);
+
+    ctx.save();
+    corals.forEach((coral, i) => {
+      if (i >= coralLevel / 2) return; // Show more corals as level increases
+
+      const x = coral.xPct * viewW * 0.8 + viewW * 0.1;
+      const y = viewH * 0.88 + coral.yPct * (viewH * 0.08);
+      const size = 15 + coral.sizeFactor * 25 + (coralLevel / 25) * 10;
+
+      // Coral colors - vibrant decorative pieces
+      const hue = (coral.hue + i * 40) % 360;
+      const colors = {
+        main: `hsl(${hue}, 70%, 50%)`,
+        light: `hsl(${hue}, 70%, 65%)`,
+        dark: `hsl(${hue}, 70%, 35%)`
+      };
+
+      // Base
+      ctx.fillStyle = colors.dark;
+      ctx.beginPath();
+      ctx.ellipse(x, y + size * 0.1, size * 0.6, size * 0.3, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Main coral structure
+      ctx.fillStyle = colors.main;
+      ctx.beginPath();
+      ctx.ellipse(x, y - size * 0.3, size * 0.5, size * 0.7, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Branches
+      ctx.strokeStyle = colors.light;
+      ctx.lineWidth = 2 + coralLevel / 10;
+      ctx.lineCap = 'round';
+
+      for (let b = 0; b < 4; b++) {
+        const angle = (b / 4) * Math.PI * 2 - Math.PI / 2;
+        const branchLen = size * (0.4 + coral.sizeFactor * 0.3);
+        ctx.beginPath();
+        ctx.moveTo(x, y - size * 0.3);
+        ctx.lineTo(
+          x + Math.cos(angle) * branchLen,
+          y - size * 0.3 + Math.sin(angle) * branchLen
+        );
+        ctx.stroke();
+      }
+
+      // Highlight
+      ctx.fillStyle = colors.light;
+      ctx.globalAlpha = 0.5;
+      ctx.beginPath();
+      ctx.ellipse(x - size * 0.15, y - size * 0.45, size * 0.25, size * 0.35, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.globalAlpha = 1;
+    });
+    ctx.restore();
+  }
+}
+
 /* ---- Interaction ---- */
 canvas.addEventListener('click', (e)=>{
   const t=currentTank(); if(!t) return;
@@ -1867,6 +2286,7 @@ function tick(){
   drawBackgroundBase();
   drawPlantLayer(plantsBack, Date.now()*0.001);
   drawBackgroundEffects();
+  drawEquipment();
 
   const t=currentTank(); if(t) for(const f of t.fish) renderSprite(f);
 

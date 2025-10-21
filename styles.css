@@ -1,17 +1,39 @@
 /* ===================================
-   Aquarium Tycoon v2.7.0 - Enhanced Styles
+   Aquarium Tycoon v5.0.0 - Visual Overhaul
+   Complete UI redesign with enhanced aesthetics
    =================================== */
 
 :root {
-  --bg: #0b1220;
+  /* Enhanced color palette */
+  --bg: #0a0f1a;
+  --bg-gradient-start: #0f1825;
+  --bg-gradient-end: #0a0f1a;
   --panel: #121a2b;
-  --accent: #6ee7ff;
-  --text: #e8eefb;
-  --muted: #9bb0d0;
-  --gold: #ffd369;
-  --shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+  --panel-light: #1a2638;
+  --accent: #4fc3f7;
+  --accent-bright: #81d4fa;
+  --text: #ecf4ff;
+  --text-secondary: #b0c4de;
+  --muted: #7a93b0;
+  --gold: #ffd54f;
+  --gold-bright: #ffe082;
+
+  /* Shadows and effects */
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.5);
+  --shadow-glow: 0 0 20px rgba(79, 195, 247, 0.3);
+
+  /* Borders and radii */
   --radius: 16px;
+  --radius-sm: 10px;
+  --radius-lg: 20px;
+  --border: 1px solid rgba(79, 195, 247, 0.15);
+  --border-light: 1px solid rgba(255, 255, 255, 0.08);
+
+  /* Transitions */
   --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-bounce: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
 }
 
 /* Base Styles */
@@ -29,14 +51,12 @@ body {
   font-family: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto,
     'Helvetica Neue', Arial, sans-serif;
   color: var(--text);
-  background: radial-gradient(
-      1200px 800px at 70% 30%,
-      #13223b 0%,
-      #0b1220 60%
-    )
-    no-repeat,
-    var(--bg);
+  background:
+    radial-gradient(ellipse 1400px 900px at 75% 25%, rgba(79, 195, 247, 0.08) 0%, transparent 50%),
+    radial-gradient(ellipse 1200px 800px at 25% 75%, rgba(129, 212, 250, 0.05) 0%, transparent 50%),
+    linear-gradient(180deg, var(--bg-gradient-start) 0%, var(--bg-gradient-end) 100%);
   overflow: hidden;
+  background-attachment: fixed;
 }
 
 /* Layout */
@@ -59,12 +79,32 @@ body {
   display: grid;
   grid-template-columns: 1fr auto 1fr;
   align-items: center;
-  background: linear-gradient(180deg, #16243e 0%, #0f1a2d 100%);
-  border: 1px solid #1c2a46;
-  border-radius: var(--radius);
-  padding: 10px 14px;
-  box-shadow: var(--shadow);
-  backdrop-filter: blur(10px);
+  background: linear-gradient(135deg,
+    rgba(26, 38, 56, 0.95) 0%,
+    rgba(15, 26, 45, 0.98) 50%,
+    rgba(18, 30, 48, 0.95) 100%
+  );
+  border: var(--border);
+  border-radius: var(--radius-lg);
+  padding: 12px 16px;
+  box-shadow: var(--shadow-lg), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(16px) saturate(180%);
+  position: relative;
+  overflow: hidden;
+}
+
+.topbar::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg,
+    transparent 0%,
+    rgba(79, 195, 247, 0.3) 50%,
+    transparent 100%
+  );
 }
 
 .stats {
@@ -80,22 +120,42 @@ body {
 }
 
 .stat {
-  padding: 8px 12px;
-  background: #0c1628;
-  border: 1px solid #1b2944;
-  border-radius: 12px;
+  padding: 9px 14px;
+  background: linear-gradient(135deg, rgba(12, 22, 40, 0.8) 0%, rgba(8, 16, 30, 0.9) 100%);
+  border: var(--border-light);
+  border-radius: var(--radius-sm);
   font-weight: 600;
+  font-size: 0.95em;
+  letter-spacing: 0.3px;
   transition: var(--transition-smooth);
+  position: relative;
+  overflow: hidden;
+}
+
+.stat::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.1) 50%,
+    transparent 100%
+  );
 }
 
 .stat:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(110, 231, 255, 0.15);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md), 0 0 16px rgba(79, 195, 247, 0.2);
+  border-color: rgba(79, 195, 247, 0.3);
 }
 
 .stat .val {
-  color: var(--gold);
+  color: var(--gold-bright);
   font-weight: 700;
+  text-shadow: 0 0 10px rgba(255, 213, 79, 0.3);
 }
 
 .controls {
@@ -109,49 +169,61 @@ body {
 button {
   appearance: none;
   border: none;
-  background: linear-gradient(180deg, #1b2a47, #13213b);
+  background: linear-gradient(135deg, rgba(27, 42, 71, 0.9) 0%, rgba(19, 33, 59, 0.95) 100%);
   color: var(--text);
-  padding: 10px 14px;
-  border-radius: 12px;
-  border: 1px solid #26385f;
+  padding: 11px 16px;
+  border-radius: var(--radius-sm);
+  border: var(--border-light);
   cursor: pointer;
   font-weight: 600;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  font-size: 0.95em;
+  letter-spacing: 0.3px;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
   overflow: hidden;
+  box-shadow: var(--shadow-sm), inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
 button::before {
   content: '';
   position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 0;
-  height: 0;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.1);
-  transform: translate(-50%, -50%);
-  transition: width 0.6s, height 0.6s;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.1) 50%,
+    transparent 100%
+  );
+  transition: left 0.5s ease;
 }
 
 button:hover::before {
-  width: 300px;
-  height: 300px;
+  left: 100%;
 }
 
 button:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(23, 74, 121, 0.5);
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-md), 0 0 20px rgba(79, 195, 247, 0.3);
+  border-color: rgba(79, 195, 247, 0.4);
 }
 
 button:active {
-  transform: translateY(0);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
 }
 
 button[disabled] {
-  opacity: 0.6;
+  opacity: 0.5;
   cursor: not-allowed;
   transform: none !important;
+  filter: grayscale(0.3);
+}
+
+button[disabled]:hover {
+  box-shadow: var(--shadow-sm), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  border-color: var(--border-light);
 }
 
 .small {
@@ -161,30 +233,37 @@ button[disabled] {
 }
 
 .btn-danger {
-  background: linear-gradient(180deg, #5a1c2b, #3a1220);
-  border-color: #7e2437;
+  background: linear-gradient(135deg, rgba(220, 38, 38, 0.9) 0%, rgba(153, 27, 27, 0.95) 100%);
+  border-color: rgba(248, 113, 113, 0.3);
+  color: #fff;
 }
 
 .btn-danger:hover {
-  box-shadow: 0 8px 20px rgba(126, 36, 55, 0.5);
+  box-shadow: var(--shadow-md), 0 0 24px rgba(220, 38, 38, 0.5);
+  border-color: rgba(248, 113, 113, 0.5);
 }
 
 .btn-accent {
-  background: linear-gradient(180deg, #18738e, #124b64);
-  border-color: #2f9bb6;
+  background: linear-gradient(135deg, rgba(14, 165, 233, 0.9) 0%, rgba(2, 132, 199, 0.95) 100%);
+  border-color: rgba(56, 189, 248, 0.3);
+  color: #fff;
 }
 
 .btn-accent:hover {
-  box-shadow: 0 8px 20px rgba(47, 155, 182, 0.5);
+  box-shadow: var(--shadow-md), 0 0 24px rgba(14, 165, 233, 0.5);
+  border-color: rgba(56, 189, 248, 0.5);
 }
 
 .btn-gold {
-  background: linear-gradient(180deg, #8a6a1a, #5c4a14);
-  border-color: #c7a538;
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.9) 0%, rgba(217, 119, 6, 0.95) 100%);
+  border-color: rgba(251, 191, 36, 0.3);
+  color: #fff;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
 }
 
 .btn-gold:hover {
-  box-shadow: 0 8px 20px rgba(199, 165, 56, 0.5);
+  box-shadow: var(--shadow-md), 0 0 24px rgba(245, 158, 11, 0.5);
+  border-color: rgba(251, 191, 36, 0.5);
 }
 
 .cant-afford {

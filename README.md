@@ -2,7 +2,7 @@
 
 An incremental browser game where you manage aquarium tanks, grow fish, and build your aquatic empire!
 
-![Version](https://img.shields.io/badge/version-4.0.0-blue)
+![Version](https://img.shields.io/badge/version-5.0.0-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![HTML5](https://img.shields.io/badge/HTML5-Canvas-orange)
 
@@ -191,7 +191,14 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 📊 Version History
 
-### v4.0.0 (Current) - Clean Release
+### v5.0.0 (Current) - Visual Overhaul
+- **Realistic Fish Sprites** - Completely redesigned sprites with lifelike details
+- **Enhanced Backgrounds** - Beautiful, detailed aquarium environments with improved graphics
+- **Modern UI Design** - Polished interface with refined aesthetics and smooth animations
+- All 12 fish species now feature highly detailed pixel art matching real-life counterparts
+- Improved visual effects including enhanced lighting, shadows, and gradients
+
+### v4.0.0 - Clean Release
 - **Project Cleanup** - Removed legacy files and duplicates
 - Streamlined codebase for production
 - Clean folder structure with only essential files
