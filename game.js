@@ -1,14 +1,15 @@
 /* ==========================================
-   Aquarium Tycoon (v3.1.0)
-   - PNG SPRITE SYSTEM - Replaced canvas-drawn sprites with pixel art
-   - Improved performance with pre-loaded sprite images
-   - Retro pixel art aesthetic for all 12 fish species
+   Aquarium Tycoon (v3.2.0)
+   - ENHANCED SPRITES - Higher resolution pixel art with more detail
+   - Larger sprites (64x32 to 128x36) with shading and highlights
+   - Added scale patterns, eye highlights, and fin details
+   - Background tank simulation: all tanks grow fish & run automations
    - Maintained all features: rarity glows, maturity bars, animations
    - Debug speed moved to Automations (password-protected)
    - Responsive design optimized for all screen sizes
    - Modular file structure for easier development
    ========================================== */
-const GAME_VERSION = '3.1.0';
+const GAME_VERSION = '3.2.0';
 const PRESTIGE_BASE = 10_000_000; // starting prestige price
 const AUTOMATION_PASSWORD = 'HAX'; // Password for automation features
 

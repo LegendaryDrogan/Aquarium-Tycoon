@@ -9,55 +9,51 @@ import os
 FISH_SPRITES = {
     'guppy': {
         'colors': {'top': '#64c8ff', 'belly': '#e6f6ff', 'fin': '#f6a9ff'},
-        'size': (48, 24),
-        'pixels': [
-            # Simple guppy shape (width x height grid)
-            # Body pixels as (x, y, color_key)
-        ]
+        'size': (64, 32)  # Larger for more detail
     },
     'gold': {
         'colors': {'top': '#ffae3a', 'belly': '#fff1c9', 'fin': '#ffd36a'},
-        'size': (52, 28)
+        'size': (72, 40)
     },
     'squid': {
         'colors': {'top': '#c0d2ff', 'belly': '#eaf0ff', 'fin': '#d7e0ff'},
-        'size': (56, 32)
+        'size': (72, 48)
     },
     'koi': {
         'colors': {'top': '#ff7b6a', 'belly': '#ffe8d8', 'fin': '#ff9980'},
-        'size': (60, 28)
+        'size': (80, 40)
     },
     'angel': {
         'colors': {'top': '#ffeb3b', 'belly': '#fffae6', 'fin': '#fff176'},
-        'size': (48, 52)
+        'size': (64, 72)
     },
     'discus': {
         'colors': {'top': '#ff5252', 'belly': '#ffd4d4', 'fin': '#ff7b7b'},
-        'size': (52, 52)
+        'size': (72, 72)
     },
     'eel': {
         'colors': {'top': '#4a7c59', 'belly': '#a8d5ba', 'fin': '#6b9b7a'},
-        'size': (80, 20)
+        'size': (112, 32)
     },
     'turtle': {
         'colors': {'top': '#5d7f3f', 'belly': '#c9dfb0', 'fin': '#8fae6f'},
-        'size': (56, 40)
+        'size': (80, 56)
     },
     'shark': {
         'colors': {'top': '#607d8b', 'belly': '#cfd8dc', 'fin': '#90a4ae'},
-        'size': (72, 32)
+        'size': (96, 48)
     },
     'dolphin': {
         'colors': {'top': '#42a5f5', 'belly': '#e3f2fd', 'fin': '#64b5f6'},
-        'size': (68, 36)
+        'size': (96, 52)
     },
     'oarfish': {
         'colors': {'top': '#e040fb', 'belly': '#f3e5f5', 'fin': '#ea80fc'},
-        'size': (96, 24)
+        'size': (128, 36)
     },
     'angler': {
         'colors': {'top': '#1a1a2e', 'belly': '#3d405b', 'fin': '#2e2e4a'},
-        'size': (60, 48)
+        'size': (84, 64)
     }
 }
 
@@ -67,39 +63,75 @@ def hex_to_rgb(hex_color):
     return tuple(int(hex_color[i:i+2], 16) for i in (0, 2, 4))
 
 def draw_guppy(img, colors):
-    """Draw pixel art guppy"""
-    draw = ImageDraw.Draw(img)
+    """Draw detailed pixel art guppy"""
     top, belly, fin = hex_to_rgb(colors['top']), hex_to_rgb(colors['belly']), hex_to_rgb(colors['fin'])
+    # Shading colors
+    top_dark = tuple(max(0, c - 30) for c in top)
+    belly_light = tuple(min(255, c + 20) for c in belly)
+    fin_light = tuple(min(255, c + 30) for c in fin)
 
-    # Tail (left side)
-    for y in range(8, 16):
-        for x in range(4, 12):
-            if (x - 4) + abs(y - 12) < 8:
+    # Large fancy tail fin
+    for y in range(6, 26):
+        for x in range(2, 18):
+            dist = abs(y - 16) + (x - 2) * 0.6
+            if dist < 14:
+                # Add gradient to fin
+                if (x - 2) % 3 == 0:
+                    img.putpixel((x, y), fin_light)
+                else:
+                    img.putpixel((x, y), fin)
+
+    # Body with shading
+    for y in range(10, 22):
+        for x in range(18, 52):
+            dy = abs(y - 16)
+            if dy < 6:
+                if y > 16:
+                    # Belly
+                    if x < 30:
+                        img.putpixel((x, y), belly_light)
+                    else:
+                        img.putpixel((x, y), belly)
+                else:
+                    # Top
+                    if x > 35:
+                        img.putpixel((x, y), top_dark)
+                    else:
+                        img.putpixel((x, y), top)
+
+    # Head
+    for y in range(12, 20):
+        for x in range(52, 60):
+            if abs(y - 16) < 4:
+                img.putpixel((x, y), top if y <= 16 else belly)
+
+    # Dorsal fin with detail
+    for y in range(4, 12):
+        for x in range(28, 42):
+            if (x - 28) + (y - 4) < 10 and (42 - x) + (y - 4) < 8:
+                if (x + y) % 2 == 0:
+                    img.putpixel((x, y), fin_light)
+                else:
+                    img.putpixel((x, y), fin)
+
+    # Ventral fin
+    for y in range(20, 26):
+        for x in range(32, 42):
+            if (x - 32) + (26 - y) < 8:
                 img.putpixel((x, y), fin)
 
-    # Body
-    for y in range(6, 18):
-        for x in range(12, 36):
-            dy = abs(y - 12)
-            if dy < 6 and x < 36:
-                color = belly if y > 12 else top
-                img.putpixel((x, y), color)
+    # Scale pattern
+    for y in range(12, 20, 2):
+        for x in range(24, 48, 3):
+            if abs(y - 16) < 5:
+                img.putpixel((x, y), belly_light if y > 16 else top_dark)
 
-    # Head (tapered)
-    for y in range(8, 16):
-        for x in range(36, 44):
-            if abs(y - 12) < 4:
-                img.putpixel((x, y), top if y <= 12 else belly)
-
-    # Dorsal fin
-    for y in range(2, 8):
-        for x in range(18, 28):
-            if (x - 18) + (y - 2) < 8 and (28 - x) + (y - 2) < 6:
-                img.putpixel((x, y), fin)
-
-    # Eye
-    img.putpixel((38, 10), (0, 0, 0))
-    img.putpixel((39, 10), (0, 0, 0))
+    # Eye with white highlight
+    for dy in range(3):
+        for dx in range(3):
+            img.putpixel((54 + dx, 14 + dy), (0, 0, 0))
+    img.putpixel((55, 14), (255, 255, 255))
+    img.putpixel((56, 15), (255, 255, 255))
 
 def draw_goldfish(img, colors):
     """Draw pixel art goldfish"""
