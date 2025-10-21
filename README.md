@@ -2,17 +2,18 @@
 
 An incremental browser game where you manage aquarium tanks, grow fish, and build your aquatic empire!
 
-![Version](https://img.shields.io/badge/version-2.7.0-blue)
+![Version](https://img.shields.io/badge/version-3.4.0-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![HTML5](https://img.shields.io/badge/HTML5-Canvas-orange)
 
 ## ✨ Features
 
-- 🐠 **12 Unique Fish Species** - From Guppy to Angler Fish with realistic sprites
-- 🎨 **10 Beautiful Backgrounds** - Unlock stunning aquarium themes
+- 🎨 **Pixel Art Sprites** - Hand-crafted retro pixel art for all 12 fish species
+- 🌊 **Enhanced Backgrounds** - Stable, detailed environments with animated elements
+- 🎵 **Procedural Music** - Actual melodic compositions, not static noise!
 - 🏆 **Prestige System** - Permanent growth bonuses for replayability
 - 🤖 **Smart Automation** - Auto-buy and auto-sell with intelligent algorithms
-- 🎭 **Rarity System** - Rare, Epic, and Legendary fish with special effects
+- 🎭 **Rarity System** - Rare, Epic, and Legendary fish with glowing effects
 - 🖥️ **Multiple Tanks** - Run parallel tanks that simulate simultaneously
 - 💾 **Auto-Save** - Never lose your progress
 - 🎮 **Smooth Animations** - Professional UI with modern design
@@ -23,7 +24,7 @@ An incremental browser game where you manage aquarium tanks, grow fish, and buil
 
 **Option 1: Download and Play**
 1. Download this repository
-2. Open `Aquarium Tycoon v2.7.0 Enhanced.html` in your browser
+2. Open `index.html` in your browser
 3. Enjoy!
 
 **Option 2: Local Development Server**
@@ -93,13 +94,34 @@ See **[QUICK-EDITS.md](QUICK-EDITS.md)** for more examples!
 ### Main Game View
 Beautiful animated fish in multiple tank environments with smooth UI
 
-### Enhanced Sprites
+### Pixel Art Fish
 All 12 fish species feature:
-- Realistic eye details with iris gradients
-- Detailed scale patterns with shimmer effects
-- Translucent fins with ray structures
-- 3D depth with body shadows
-- Species-specific features (shark teeth, koi patterns, etc.)
+- Retro pixel art aesthetic with high detail
+- Enhanced eye highlights with white reflections
+- Scale patterns and shading for depth
+- Gradient fins with detailed structure
+- Species-specific details (shark teeth, koi patterns, etc.)
+
+### Backgrounds
+10 unique aquarium themes:
+- **Classic Blue** - Sandy bottom with layered gradients
+- **Deep Sea** - Dark depths with mysterious rock formations
+- **Coral Reef** - Colorful coral heads at the seabed
+- **Kelp Forest** - Swaying kelp strands (animated!)
+- **Lagoon** - Tropical turquoise with sandy dunes
+- **Night Mode** - Moon, twinkling stars, and dark waters
+- **Sunset Glow** - Warm orange and red gradients
+- **Volcanic Vent** - Dark rocks with pulsing lava glow
+- **Ice Cavern** - Icicles hanging from above
+- **Fantasy Glow** - Bioluminescent plants that pulse
+
+### Music System
+Procedural music generation:
+- Real chord progressions (I-IV-V-I, etc.)
+- Musical scales (Major, Minor, Pentatonic, etc.)
+- Tempo and mood matched to each background
+- Gentle water ambience layer
+- No more harsh static noise!
 
 ## 🛠️ Tech Stack
 
@@ -169,17 +191,35 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 📊 Version History
 
-### v2.7.0 (Current)
+### v3.4.0 (Current)
+- **Enhanced Backgrounds** - Stable, non-glitchy visuals with seeded randomization
+- Layered gradients, animated elements (kelp, lava, stars)
+- Unique details per background theme
+
+### v3.3.0
+- **Procedural Music System** - Real melodic ambient music
+- Replaced harsh static with actual musical compositions
+- Each background has unique scale, tempo, and chord progressions
+
+### v3.2.0
+- **Enhanced Sprites** - Higher resolution pixel art with more detail
+- Larger sprites (64x32 to 128x36) with shading and highlights
+- Scale patterns, eye highlights, and fin details
+
+### v3.1.0
+- **PNG Sprite System** - Replaced canvas-drawn sprites with pixel art
+- Improved performance with pre-loaded sprite images
+- Retro pixel art aesthetic for all 12 fish species
+
+### v3.0.0
+- Complete sprite redesign with professional rendering
+- Fixed all rendering bugs
+- Better proportions and realistic features
+
+### v2.7.0
 - Enhanced fish sprites with realistic details
 - Modular file structure for easier development
 - Improved CSS with smooth animations
-- Better performance and caching
-- Comprehensive documentation
-
-### v2.6.1 (Legacy)
-- Original single-file version
-- 12 fish species with basic sprites
-- Tank system with automation
 
 ## 🌟 Star This Repo!
 

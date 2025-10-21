@@ -4,15 +4,16 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is **Aquarium Tycoon** (v2.7.0 Enhanced), a single-file incremental browser game built with vanilla JavaScript and HTML5 Canvas. The entire game logic, rendering, and styling are contained in `Aquarium Tycoon — v261.html`.
+This is **Aquarium Tycoon** (v3.4.0), an incremental browser game built with vanilla JavaScript and HTML5 Canvas. The project uses a modular file structure for easier development and maintenance.
 
 ## Architecture
 
-### Single-File Structure
-The HTML file contains three main sections in order:
-1. **CSS Styles** (lines ~7-97): Complete styling using CSS custom properties for theming
-2. **HTML Structure** (lines ~99-173): Grid-based layout with topbar, shop panel, tank canvas, and modals
-3. **JavaScript Game Logic** (lines ~175+): All game mechanics, rendering, and state management
+### Modular Structure
+The project is split into separate files:
+1. **index.html** (~90 lines): HTML structure with topbar, shop panel, tank canvas, and modals
+2. **styles.css** (~500 lines): Complete styling using CSS custom properties for theming
+3. **game.js** (~1900 lines): All game mechanics, rendering, and state management
+4. **assets/fish/**: PNG sprite images for all 12 fish species
 
 ### Core Game Systems
 
@@ -46,18 +47,30 @@ Each tank is an independent instance with:
 - Cost formula: `PRESTIGE_BASE * pow(3, prestige)`
 - Multiplier: `pow(2, prestige)`
 
-**Canvas Rendering (Enhanced in v2.7.0)**
-- Uses 2D context with highly detailed sprite rendering for all 12 fish species
-- `speciesStyle` object (lines ~231-244) defines color palettes per species
-- Enhanced sprite features:
-  - Realistic eyes with iris gradients, pupils, and reflections (`eye()` function)
-  - Detailed scale patterns with highlights (`scales()` function)
-  - Gradient-filled fins with translucency and fin rays
-  - Body shadows for depth and 3D effect
-  - Species-specific details (shark teeth, koi patterns, goldfish shimmer, etc.)
+**Canvas Rendering (v3.4.0)**
+- Uses PNG sprite system for all 12 fish species (loaded from `assets/fish/`)
+- Pixel art aesthetic with enhanced detail (64x32 to 128x36 resolution)
+- Sprite features:
+  - Hand-crafted pixel art with shading and highlights
+  - Scale patterns and eye reflections
+  - Gradient fins with structure details
+  - Species-specific details (shark teeth, koi patterns, etc.)
+- Enhanced backgrounds with stable decorations:
+  - Seeded randomization prevents glitchy rendering
+  - Layered gradients for depth
+  - Animated elements (kelp sway, star twinkle, lava pulse)
+  - 10 unique themes with distinct visuals
 - Parallax plant layers (front/back) respond to mouse position
-- Background rendering system with 10 unlockable themes
-- Maturity progress bars rendered above fish
+- Maturity progress bars rendered above fish with rarity-colored rims
+
+**Audio System (v3.3.0)**
+- Procedural music generation using Web Audio API
+- Musical scales (Major, Minor, Pentatonic, etc.)
+- Real chord progressions (I-IV-V-I patterns)
+- Tempo and mood matched to each background
+- ADSR envelope for natural note attack/decay
+- Layered synthesis: pads, melodies, water ambience
+- No more harsh static noise!
 
 **Automation (lines ~710-755)**
 - Per-tank auto-sell: Sells fish at ≥80% maturity

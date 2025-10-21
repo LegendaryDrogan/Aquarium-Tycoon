@@ -1,15 +1,17 @@
 /* ==========================================
-   Aquarium Tycoon (v3.2.0)
+   Aquarium Tycoon (v3.4.0)
+   - ENHANCED BACKGROUNDS - Stable, detailed, non-glitchy visuals
+   - Seeded randomization for consistent decoration placement
+   - Layered gradients, animated elements (kelp sway, lava pulse, stars)
+   - Unique details per background (moon/stars, coral, ice stalactites, etc.)
+   - PROCEDURAL MUSIC SYSTEM - Real melodic ambient music!
+   - Replaced harsh static noise with actual musical compositions
    - ENHANCED SPRITES - Higher resolution pixel art with more detail
-   - Larger sprites (64x32 to 128x36) with shading and highlights
-   - Added scale patterns, eye highlights, and fin details
    - Background tank simulation: all tanks grow fish & run automations
-   - Maintained all features: rarity glows, maturity bars, animations
    - Debug speed moved to Automations (password-protected)
    - Responsive design optimized for all screen sizes
-   - Modular file structure for easier development
    ========================================== */
-const GAME_VERSION = '3.2.0';
+const GAME_VERSION = '3.4.0';
 const PRESTIGE_BASE = 10_000_000; // starting prestige price
 const AUTOMATION_PASSWORD = 'HAX'; // Password for automation features
 
@@ -1397,46 +1399,345 @@ function renderSprite(f){
   ctx.restore();
 }
 /* ---- Background: base (per-tank) ---- */
+// Stable background decorations (generated once per background type)
+// Store as percentages (0-1) instead of absolute positions
+const bgDecoCache = {};
+function getStableDecor(bgId, count, seed=0){
+  const key = `${bgId}_${count}_${seed}`;
+  if(bgDecoCache[key]) return bgDecoCache[key];
+
+  // Use seeded random for stable positions
+  const seededRandom = (i) => {
+    const x = Math.sin(i * 12.9898 + seed * 78.233) * 43758.5453;
+    return x - Math.floor(x);
+  };
+
+  const decor = [];
+  for(let i=0; i<count; i++){
+    decor.push({
+      xPct: seededRandom(i * 2),           // 0-1 percentage
+      yPct: seededRandom(i * 2 + 1),       // 0-1 percentage
+      sizeFactor: seededRandom(i * 3),     // 0-1 factor
+      hue: seededRandom(i * 4) * 360,
+      offset: seededRandom(i * 5) * 100
+    });
+  }
+  bgDecoCache[key] = decor;
+  return decor;
+}
+
 function drawBackgroundBase(){
   const t = currentTank(); if(!t) return;
   const id = t.backgroundId || 'default';
+  const time = Date.now() * 0.001;
 
   switch(id){
-    case 'default': { const g=ctx.createLinearGradient(0,0,0,viewH); g.addColorStop(0,'#4da6ff'); g.addColorStop(1,'#002b66'); ctx.fillStyle=g; ctx.fillRect(0,0,viewW,viewH); break; }
-    case 'deepsea': { const g=ctx.createLinearGradient(0,0,0,viewH); g.addColorStop(0,'#001f33'); g.addColorStop(1,'#000a0f'); ctx.fillStyle=g; ctx.fillRect(0,0,viewW,viewH);
-      ctx.fillStyle='rgba(0,0,0,0.45)'; for(let i=0;i<3;i++){ const x=i*(viewW/3)+rnd(-40,40); const w=viewW*0.5; const h=viewH*0.25 + i*12; ctx.beginPath(); ctx.moveTo(x,viewH); ctx.quadraticCurveTo(x+w*0.4, viewH-h, x+w, viewH); ctx.closePath(); ctx.fill(); } break; }
-    case 'coral':   { const g=ctx.createLinearGradient(0,0,0,viewH); g.addColorStop(0,'#2f6d7a'); g.addColorStop(1,'#10333a'); ctx.fillStyle=g; ctx.fillRect(0,0,viewW,viewH);
-      ctx.save(); ctx.globalAlpha=0.6; ctx.fillStyle='#2a3a4f';
-      for(let i=0;i<6;i++){ const x=rnd(0,viewW), y=viewH*0.88; const r=rnd(20,48);
-        ctx.beginPath(); ctx.ellipse(x,y,r*1.2,r,0,0,Math.PI*2); ctx.fill();
-        ctx.beginPath(); ctx.ellipse(x+r*0.8,y+4,r*0.8,r*0.6,0,0,Math.PI*2); ctx.fill();
-      } ctx.restore(); break; }
-    case 'kelp':    { const g=ctx.createLinearGradient(0,0,0,viewH); g.addColorStop(0,'#1a472a'); g.addColorStop(1,'#002b1a'); ctx.fillStyle=g; ctx.fillRect(0,0,viewW,viewH);
-      ctx.save(); ctx.strokeStyle='rgba(46,140,90,0.5)'; ctx.lineWidth=12; ctx.lineCap='round'; const t=Date.now()*0.001; for(let i=0;i<8;i++){ const x=i*(viewW/8)+rnd(-20,20), base=viewH*0.95, h=rnd(viewH*0.4,viewH*0.65); ctx.beginPath(); for(let s=0;s<=6;s++){ const k=s/6; const yy=base - h*k; const xx=x + Math.sin(k*1.7 + t*0.6 + i)*28*(1-k); if(s===0) ctx.moveTo(xx,base); else ctx.lineTo(xx,yy); } ctx.stroke(); } ctx.restore(); break; }
-    case 'lagoon':  { const g=ctx.createLinearGradient(0,0,0,viewH); g.addColorStop(0,'#66ffe0'); g.addColorStop(1,'#006666'); ctx.fillStyle=g; ctx.fillRect(0,0,viewW,viewH);
-      ctx.fillStyle='rgba(240,220,150,0.35)'; for(let i=0;i<3;i++){ const y=viewH*(0.82+i*0.05);
-        ctx.beginPath(); ctx.moveTo(-50,y); ctx.quadraticCurveTo(viewW*0.3, y-12, viewW*0.6, y+8); ctx.quadraticCurveTo(viewW*0.9, y, viewW+50, y+16); ctx.lineTo(viewW+50,viewH); ctx.lineTo(-50,viewH); ctx.closePath(); ctx.fill(); }
-      break; }
-    case 'night':   { const g=ctx.createLinearGradient(0,0,0,viewH); g.addColorStop(0,'#001f3f'); g.addColorStop(1,'#000000'); ctx.fillStyle=g; ctx.fillRect(0,0,viewW,viewH);
-      ctx.save(); ctx.globalCompositeOperation='screen'; const r=120; const cx=viewW*0.8, cy=viewH*0.2; const rg=ctx.createRadialGradient(cx,cy,10,cx,cy,r); rg.addColorStop(0,'rgba(200,220,255,0.35)'); rg.addColorStop(1,'rgba(200,220,255,0)'); ctx.fillStyle=rg; ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2); ctx.fill(); ctx.restore(); break; }
-    case 'sunset':  { const g=ctx.createLinearGradient(0,0,0,viewH); g.addColorStop(0,'#ff9966'); g.addColorStop(1,'#660000'); ctx.fillStyle=g; ctx.fillRect(0,0,viewW,viewH);
-      ctx.fillStyle='rgba(255,200,160,0.15)'; ctx.fillRect(0,0,viewW,viewH*0.4); break; }
-    case 'volcano': { const g=ctx.createLinearGradient(0,0,0,viewH); g.addColorStop(0,'#2f1b0c'); g.addColorStop(1,'#0a0502'); ctx.fillStyle=g; ctx.fillRect(0,0,viewW,viewH);
-      ctx.fillStyle='rgba(20,10,6,0.85)'; ctx.beginPath(); ctx.moveTo(-40,viewH); ctx.quadraticCurveTo(viewW*0.35,viewH*0.82, viewW*0.7,viewH); ctx.lineTo(-40,viewH); ctx.fill();
-      ctx.save(); ctx.globalCompositeOperation='screen'; const vg=ctx.createRadialGradient(viewW*0.35,viewH*0.86,8,viewW*0.35,viewH*0.86,80);
-      vg.addColorStop(0,'rgba(255,120,20,0.5)'); vg.addColorStop(1,'rgba(255,120,20,0)'); ctx.fillStyle=vg; ctx.beginPath(); ctx.arc(viewW*0.35,viewH*0.86,90,0,Math.PI*2); ctx.fill(); ctx.restore(); break; }
-    case 'ice':     { const g=ctx.createLinearGradient(0,0,0,viewH); g.addColorStop(0,'#cceeff'); g.addColorStop(1,'#00334d'); ctx.fillStyle=g; ctx.fillRect(0,0,viewW,viewH);
-      ctx.fillStyle='rgba(255,255,255,0.3)'; for(let i=0;i<10;i++){ const x=i*(viewW/10)+rnd(-20,20); const h=rnd(30,80);
-        ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x+8,0); ctx.lineTo(x+4,h); ctx.closePath(); ctx.fill();
-      } break; }
-    case 'fantasy': { const g=ctx.createLinearGradient(0,0,0,viewH); g.addColorStop(0,'#a64dff'); g.addColorStop(1,'#1a0033'); ctx.fillStyle=g; ctx.fillRect(0,0,viewW,viewH);
-      ctx.save(); ctx.globalCompositeOperation='screen'; for(let i=0;i<6;i++){ const x=rnd(40,viewW-40), y=viewH*0.90; const c=`hsla(${rnd(180,320)},80%,70%,.6)`; const rg=ctx.createRadialGradient(x,y-20,4,x,y-20,60); rg.addColorStop(0,c); rg.addColorStop(1,'rgba(0,0,0,0)'); ctx.fillStyle=rg; ctx.beginPath(); ctx.arc(x,y-20,60,0,Math.PI*2); ctx.fill(); ctx.fillStyle='rgba(200,255,230,.18)'; ctx.fillRect(x-2,y-30,4,30); } ctx.restore(); break; }
+    case 'default': {
+      // Layered blue gradient
+      const g=ctx.createLinearGradient(0,0,0,viewH);
+      g.addColorStop(0,'#4da6ff');
+      g.addColorStop(0.5,'#2b7fcc');
+      g.addColorStop(1,'#002b66');
+      ctx.fillStyle=g;
+      ctx.fillRect(0,0,viewW,viewH);
+
+      // Sandy bottom with texture
+      ctx.fillStyle='#c2a875';
+      ctx.fillRect(0,viewH*0.85,viewW,viewH*0.15);
+      ctx.fillStyle='rgba(160,130,80,0.3)';
+      for(let x=0; x<viewW; x+=40){
+        ctx.fillRect(x,viewH*0.85,20,viewH*0.15);
+      }
+      break;
+    }
+
+    case 'deepsea': {
+      // Deep dark gradient
+      const g=ctx.createLinearGradient(0,0,0,viewH);
+      g.addColorStop(0,'#001f33');
+      g.addColorStop(0.6,'#000f1a');
+      g.addColorStop(1,'#000a0f');
+      ctx.fillStyle=g;
+      ctx.fillRect(0,0,viewW,viewH);
+
+      // Stable rock formations
+      const rocks = getStableDecor('deepsea', 4, 123);
+      ctx.fillStyle='rgba(0,0,0,0.5)';
+      rocks.forEach(rock => {
+        const x = rock.xPct * viewW * 0.6 + viewW * 0.2;
+        const y = viewH * 0.75;
+        const w = viewW * 0.3;
+        const h = rock.sizeFactor * 50 + 20;
+        ctx.beginPath();
+        ctx.moveTo(x,viewH);
+        ctx.quadraticCurveTo(x+w*0.4, y, x+w, viewH);
+        ctx.closePath();
+        ctx.fill();
+      });
+      break;
+    }
+
+    case 'coral': {
+      // Coral reef colors
+      const g=ctx.createLinearGradient(0,0,0,viewH);
+      g.addColorStop(0,'#2f6d7a');
+      g.addColorStop(0.7,'#1a4550');
+      g.addColorStop(1,'#10333a');
+      ctx.fillStyle=g;
+      ctx.fillRect(0,0,viewW,viewH);
+
+      // Stable coral formations
+      const corals = getStableDecor('coral', 8, 456);
+      ctx.save();
+      ctx.globalAlpha=0.7;
+      corals.forEach(coral => {
+        const x = coral.xPct * viewW;
+        const y = viewH * 0.85 + coral.offset * 0.1;
+        const r = (coral.sizeFactor * 50 + 20) * 0.5;
+
+        // Coral heads with color variation
+        ctx.fillStyle = `hsl(${20 + coral.hue * 0.2}, 40%, 35%)`;
+        ctx.beginPath();
+        ctx.ellipse(x, y, r*1.3, r, 0, 0, Math.PI*2);
+        ctx.fill();
+
+        // Smaller coral branches
+        ctx.fillStyle = `hsl(${30 + coral.hue * 0.15}, 45%, 40%)`;
+        ctx.beginPath();
+        ctx.ellipse(x+r*0.6, y+5, r*0.7, r*0.5, 0, 0, Math.PI*2);
+        ctx.fill();
+      });
+      ctx.restore();
+      break;
+    }
+
+    case 'kelp': {
+      // Kelp forest ambiance
+      const g=ctx.createLinearGradient(0,0,0,viewH);
+      g.addColorStop(0,'#1a472a');
+      g.addColorStop(0.6,'#0f3820');
+      g.addColorStop(1,'#002b1a');
+      ctx.fillStyle=g;
+      ctx.fillRect(0,0,viewW,viewH);
+
+      // Animated kelp strands (stable positions)
+      const kelps = getStableDecor('kelp', 10, 789);
+      ctx.save();
+      ctx.strokeStyle='rgba(46,140,90,0.6)';
+      ctx.lineWidth=8;
+      ctx.lineCap='round';
+
+      kelps.forEach((kelp, i) => {
+        const x = kelp.xPct * viewW;
+        const base = viewH * 0.95;
+        const height = viewH * 0.5 + kelp.sizeFactor * 50;
+
+        ctx.beginPath();
+        for(let s=0; s<=8; s++){
+          const k = s / 8;
+          const yy = base - height * k;
+          const sway = Math.sin(k * 2 + time * 0.5 + kelp.offset) * 20 * (1 - k);
+          const xx = x + sway;
+          if(s === 0) ctx.moveTo(xx, base);
+          else ctx.lineTo(xx, yy);
+        }
+        ctx.stroke();
+      });
+      ctx.restore();
+      break;
+    }
+
+    case 'lagoon': {
+      // Tropical lagoon
+      const g=ctx.createLinearGradient(0,0,0,viewH);
+      g.addColorStop(0,'#66ffe0');
+      g.addColorStop(0.5,'#33ccbb');
+      g.addColorStop(1,'#006666');
+      ctx.fillStyle=g;
+      ctx.fillRect(0,0,viewW,viewH);
+
+      // Sandy dunes (stable)
+      ctx.fillStyle='rgba(240,220,150,0.4)';
+      for(let i=0; i<4; i++){
+        const y = viewH * (0.80 + i * 0.05);
+        ctx.beginPath();
+        ctx.moveTo(-50, y);
+        ctx.quadraticCurveTo(viewW * 0.25, y - 10, viewW * 0.5, y + 5);
+        ctx.quadraticCurveTo(viewW * 0.75, y, viewW + 50, y + 10);
+        ctx.lineTo(viewW + 50, viewH);
+        ctx.lineTo(-50, viewH);
+        ctx.closePath();
+        ctx.fill();
+      }
+      break;
+    }
+
+    case 'night': {
+      // Night ocean
+      const g=ctx.createLinearGradient(0,0,0,viewH);
+      g.addColorStop(0,'#001f3f');
+      g.addColorStop(0.7,'#001020');
+      g.addColorStop(1,'#000000');
+      ctx.fillStyle=g;
+      ctx.fillRect(0,0,viewW,viewH);
+
+      // Moon
+      ctx.save();
+      ctx.globalCompositeOperation='screen';
+      const moonX = viewW * 0.75;
+      const moonY = viewH * 0.15;
+      const moonR = 80;
+
+      const moonGrad = ctx.createRadialGradient(moonX, moonY, moonR * 0.3, moonX, moonY, moonR);
+      moonGrad.addColorStop(0, 'rgba(240,240,255,0.8)');
+      moonGrad.addColorStop(0.5, 'rgba(200,220,255,0.4)');
+      moonGrad.addColorStop(1, 'rgba(200,220,255,0)');
+      ctx.fillStyle = moonGrad;
+      ctx.beginPath();
+      ctx.arc(moonX, moonY, moonR, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Stars
+      const stars = getStableDecor('night', 20, 111);
+      ctx.fillStyle = 'rgba(255,255,255,0.8)';
+      stars.forEach(star => {
+        const y = star.yPct * viewH;
+        if(y < viewH * 0.4){ // Only in upper portion
+          const twinkle = Math.sin(time * 2 + star.offset) * 0.3 + 0.7;
+          ctx.globalAlpha = twinkle;
+          ctx.fillRect(star.xPct * viewW, y, 2, 2);
+        }
+      });
+      ctx.restore();
+      break;
+    }
+
+    case 'sunset': {
+      // Warm sunset
+      const g=ctx.createLinearGradient(0,0,0,viewH);
+      g.addColorStop(0,'#ff9966');
+      g.addColorStop(0.3,'#ff7733');
+      g.addColorStop(0.7,'#cc4400');
+      g.addColorStop(1,'#660000');
+      ctx.fillStyle=g;
+      ctx.fillRect(0,0,viewW,viewH);
+
+      // Warm glow at top
+      const glowGrad = ctx.createRadialGradient(viewW * 0.5, 0, 0, viewW * 0.5, 0, viewH * 0.5);
+      glowGrad.addColorStop(0, 'rgba(255,220,160,0.3)');
+      glowGrad.addColorStop(1, 'rgba(255,220,160,0)');
+      ctx.fillStyle = glowGrad;
+      ctx.fillRect(0, 0, viewW, viewH * 0.5);
+      break;
+    }
+
+    case 'volcano': {
+      // Volcanic darkness
+      const g=ctx.createLinearGradient(0,0,0,viewH);
+      g.addColorStop(0,'#2f1b0c');
+      g.addColorStop(0.7,'#1a0f06');
+      g.addColorStop(1,'#0a0502');
+      ctx.fillStyle=g;
+      ctx.fillRect(0,0,viewW,viewH);
+
+      // Volcanic rock (stable)
+      ctx.fillStyle='rgba(20,10,6,0.9)';
+      ctx.beginPath();
+      ctx.moveTo(-50, viewH);
+      ctx.quadraticCurveTo(viewW * 0.3, viewH * 0.75, viewW * 0.6, viewH);
+      ctx.lineTo(-50, viewH);
+      ctx.fill();
+
+      // Lava glow
+      ctx.save();
+      ctx.globalCompositeOperation='screen';
+      const lavaX = viewW * 0.35;
+      const lavaY = viewH * 0.86;
+      const pulse = Math.sin(time * 1.5) * 0.2 + 0.8;
+
+      const lavaGrad = ctx.createRadialGradient(lavaX, lavaY, 10, lavaX, lavaY, 100);
+      lavaGrad.addColorStop(0, `rgba(255,120,20,${0.6 * pulse})`);
+      lavaGrad.addColorStop(0.5, `rgba(255,80,10,${0.3 * pulse})`);
+      lavaGrad.addColorStop(1, 'rgba(255,120,20,0)');
+      ctx.fillStyle = lavaGrad;
+      ctx.beginPath();
+      ctx.arc(lavaX, lavaY, 100, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+      break;
+    }
+
+    case 'ice': {
+      // Icy cavern
+      const g=ctx.createLinearGradient(0,0,0,viewH);
+      g.addColorStop(0,'#e6f7ff');
+      g.addColorStop(0.4,'#99d6ff');
+      g.addColorStop(1,'#00334d');
+      ctx.fillStyle=g;
+      ctx.fillRect(0,0,viewW,viewH);
+
+      // Ice stalactites (stable)
+      const icicles = getStableDecor('ice', 12, 222);
+      ctx.fillStyle='rgba(255,255,255,0.4)';
+      icicles.forEach(icicle => {
+        const x = icicle.xPct * viewW;
+        const h = icicle.sizeFactor * 50 + 30;
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x + 10, 0);
+        ctx.lineTo(x + 5, h);
+        ctx.closePath();
+        ctx.fill();
+
+        // Ice shine
+        ctx.fillStyle='rgba(255,255,255,0.7)';
+        ctx.fillRect(x + 2, 0, 2, h * 0.4);
+        ctx.fillStyle='rgba(255,255,255,0.4)';
+      });
+      break;
+    }
+
+    case 'fantasy': {
+      // Magical fantasy
+      const g=ctx.createLinearGradient(0,0,0,viewH);
+      g.addColorStop(0,'#a64dff');
+      g.addColorStop(0.5,'#7733cc');
+      g.addColorStop(1,'#1a0033');
+      ctx.fillStyle=g;
+      ctx.fillRect(0,0,viewW,viewH);
+
+      // Bioluminescent plants (stable)
+      const plants = getStableDecor('fantasy', 10, 333);
+      ctx.save();
+      ctx.globalCompositeOperation='screen';
+
+      plants.forEach(plant => {
+        const x = plant.xPct * viewW;
+        const y = viewH * 0.88;
+        const hue = 180 + plant.hue * 0.4;
+        const glow = Math.sin(time * 1.2 + plant.offset * 0.1) * 0.3 + 0.7;
+
+        const plantGrad = ctx.createRadialGradient(x, y - 20, 5, x, y - 20, 70);
+        plantGrad.addColorStop(0, `hsla(${hue},80%,70%,${0.7 * glow})`);
+        plantGrad.addColorStop(1, 'rgba(0,0,0,0)');
+        ctx.fillStyle = plantGrad;
+        ctx.beginPath();
+        ctx.arc(x, y - 20, 70, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Plant stem
+        ctx.fillStyle = `hsla(${hue},60%,50%,0.3)`;
+        ctx.fillRect(x - 3, y - 40, 6, 40);
+      });
+      ctx.restore();
+      break;
+    }
   }
 
-  // Seabed vignette
+  // Seabed vignette (applies to all)
   const grd2 = ctx.createLinearGradient(0, viewH*0.7, 0, viewH);
-  grd2.addColorStop(0, 'rgba(20,34,60,.0)');
-  grd2.addColorStop(1, 'rgba(20,34,60,.85)');
+  grd2.addColorStop(0, 'rgba(20,34,60,0)');
+  grd2.addColorStop(1, 'rgba(20,34,60,0.75)');
   ctx.fillStyle = grd2;
   ctx.fillRect(0, viewH*0.7, viewW, viewH*0.3);
 }
@@ -1688,7 +1989,7 @@ function applyTankBackground(){
   `;
 }
 
-/* ========== Ambient Audio (WebAudio, procedural) ========== */
+/* ========== Ambient Audio (WebAudio, procedural music) ========== */
 const audio = { ctx:null, gain:null, current:{nodes:[], stop:()=>{}}, enabled:false };
 function initAudio(){
   if(audio.ctx) return true;
@@ -1700,12 +2001,61 @@ function initAudio(){
     return true;
   }catch(e){ console.warn('Audio init failed', e); return false; }
 }
-function makeNoiseBuffer(ctx, seconds=2){
+
+// Create gentle water ambience (not harsh static)
+function makeWaterBuffer(ctx, seconds=4){
   const len = Math.floor(ctx.sampleRate * seconds);
-  const buf = ctx.createBuffer(1, len, ctx.sampleRate);
-  const data = buf.getChannelData(0);
-  for(let i=0;i<len;i++) data[i] = (Math.random()*2-1) * 0.35;
+  const buf = ctx.createBuffer(2, len, ctx.sampleRate);
+
+  for(let channel=0; channel<2; channel++){
+    const data = buf.getChannelData(channel);
+    for(let i=0; i<len; i++){
+      // Gentle filtered noise with wave-like modulation
+      const t = i / ctx.sampleRate;
+      const wave = Math.sin(t * 0.5) * 0.5 + 0.5;
+      const noise = (Math.random() * 2 - 1) * 0.08 * wave;
+      data[i] = noise;
+    }
+  }
   return buf;
+}
+
+// Musical scales for different moods
+const musicalScales = {
+  peaceful: [0, 2, 4, 5, 7, 9, 11], // Major scale (C major)
+  dreamy: [0, 2, 3, 5, 7, 8, 10],    // Natural minor (C minor)
+  mystical: [0, 2, 3, 5, 7, 8, 11],  // Harmonic minor
+  cheerful: [0, 2, 4, 7, 9],         // Major pentatonic
+  deep: [0, 3, 5, 7, 10]             // Minor pentatonic
+};
+
+// Play a note with ADSR envelope
+function playNote(ctx, frequency, startTime, duration, gainNode, waveType='sine'){
+  const osc = ctx.createOscillator();
+  const noteGain = ctx.createGain();
+
+  osc.type = waveType;
+  osc.frequency.value = frequency;
+
+  // ADSR envelope (Attack, Decay, Sustain, Release)
+  const attack = 0.1;
+  const decay = 0.2;
+  const sustain = 0.4;
+  const release = 0.5;
+
+  noteGain.gain.setValueAtTime(0, startTime);
+  noteGain.gain.linearRampToValueAtTime(0.3, startTime + attack);
+  noteGain.gain.linearRampToValueAtTime(sustain, startTime + attack + decay);
+  noteGain.gain.setValueAtTime(sustain, startTime + duration - release);
+  noteGain.gain.linearRampToValueAtTime(0, startTime + duration);
+
+  osc.connect(noteGain);
+  noteGain.connect(gainNode);
+
+  osc.start(startTime);
+  osc.stop(startTime + duration);
+
+  return {osc, noteGain};
 }
 function setBackgroundSound(bgId){
   if(audio.current.stop) try{ audio.current.stop(); }catch{}
@@ -1713,59 +2063,148 @@ function setBackgroundSound(bgId){
   if(!audio.enabled || !audio.ctx) return;
 
   const ctx = audio.ctx;
-  const noiseBuf = makeNoiseBuffer(ctx, 2.5);
+  const nodes = [];
 
-  const noise = ctx.createBufferSource(); noise.buffer = noiseBuf; noise.loop = true;
-  const filter = ctx.createBiquadFilter(); filter.type = 'bandpass';
-  const lfo = ctx.createOscillator(); lfo.type='sine';
-  const lfoGain = ctx.createGain();
-
-  let baseFreq = 400, q=1.0, lfoFreq=0.08, lfoDepth=120, toneFreq=null, toneGainVal=0;
+  // Music configuration per background
+  let config = {
+    scale: musicalScales.peaceful,
+    baseNote: 48, // C3 in MIDI
+    tempo: 120,   // BPM
+    chords: [[0,4,7], [5,9,12], [7,11,14], [0,4,7]], // I-IV-V-I progression
+    melody: true,
+    waterAmbience: true,
+    padSynth: true
+  };
 
   switch(bgId){
-    case 'default': baseFreq=500; q=0.6; lfoFreq=0.07; lfoDepth=100; toneFreq=300; toneGainVal=0.02; break;
-    case 'deepsea': baseFreq=120; q=0.9; lfoFreq=0.05; lfoDepth=40;  toneFreq=60;  toneGainVal=0.02; break;
-    case 'coral':   baseFreq=900; q=1.2; lfoFreq=0.12; lfoDepth=220; toneFreq=1200; toneGainVal=0.01; break;
-    case 'kelp':    baseFreq=320; q=0.8; lfoFreq=0.09; lfoDepth=90;  toneFreq=240; toneGainVal=0.015; break;
-    case 'lagoon':  baseFreq=700; q=0.7; lfoFreq=0.1;  lfoDepth=160; toneFreq=500; toneGainVal=0.012; break;
-    case 'night':   baseFreq=180; q=1.4; lfoFreq=0.05; lfoDepth=50;  toneFreq=220; toneGainVal=0.01; break;
-    case 'sunset':  baseFreq=450; q=0.9; lfoFreq=0.08; lfoDepth=120; toneFreq=440; toneGainVal=0.012; break;
-    case 'volcano': baseFreq=90;  q=1.6; lfoFreq=0.05; lfoDepth=30;  toneFreq=40;  toneGainVal=0.018; break;
-    case 'ice':     baseFreq=1000;q=1.0; lfoFreq=0.13; lfoDepth=260; toneFreq=1400; toneGainVal=0.008; break;
-    case 'fantasy': baseFreq=350; q=1.1; lfoFreq=0.07; lfoDepth=90; break;
+    case 'default':
+      config = {scale: musicalScales.peaceful, baseNote: 48, tempo: 100,
+                chords: [[0,4,7], [5,9,12], [7,11,14], [0,4,7]], melody: true, waterAmbience: true, padSynth: true};
+      break;
+    case 'deepsea':
+      config = {scale: musicalScales.deep, baseNote: 36, tempo: 60,
+                chords: [[0,3,7], [5,8,12], [0,3,7]], melody: false, waterAmbience: true, padSynth: true};
+      break;
+    case 'coral':
+      config = {scale: musicalScales.cheerful, baseNote: 60, tempo: 140,
+                chords: [[0,4,7], [2,5,9], [4,7,11], [0,4,7]], melody: true, waterAmbience: true, padSynth: true};
+      break;
+    case 'kelp':
+      config = {scale: musicalScales.dreamy, baseNote: 52, tempo: 90,
+                chords: [[0,3,7], [7,10,14], [5,8,12], [0,3,7]], melody: true, waterAmbience: true, padSynth: true};
+      break;
+    case 'lagoon':
+      config = {scale: musicalScales.cheerful, baseNote: 55, tempo: 110,
+                chords: [[0,4,7], [5,9,12], [7,11,14], [0,4,7]], melody: true, waterAmbience: true, padSynth: true};
+      break;
+    case 'night':
+      config = {scale: musicalScales.mystical, baseNote: 40, tempo: 70,
+                chords: [[0,3,7], [8,11,15], [0,3,7]], melody: true, waterAmbience: false, padSynth: true};
+      break;
+    case 'sunset':
+      config = {scale: musicalScales.peaceful, baseNote: 50, tempo: 85,
+                chords: [[0,4,7,11], [5,9,12,16], [7,11,14,17], [0,4,7,11]], melody: true, waterAmbience: true, padSynth: true};
+      break;
+    case 'volcano':
+      config = {scale: musicalScales.deep, baseNote: 32, tempo: 50,
+                chords: [[0,5,7], [3,7,10], [0,5,7]], melody: false, waterAmbience: false, padSynth: true};
+      break;
+    case 'ice':
+      config = {scale: musicalScales.mystical, baseNote: 64, tempo: 95,
+                chords: [[0,3,7], [5,8,12], [7,10,14], [0,3,7]], melody: true, waterAmbience: false, padSynth: true};
+      break;
+    case 'fantasy':
+      config = {scale: musicalScales.mystical, baseNote: 55, tempo: 105,
+                chords: [[0,4,7,11], [2,5,9,12], [4,7,11,14], [0,4,7,11]], melody: true, waterAmbience: true, padSynth: true};
+      break;
   }
 
-  filter.frequency.value = baseFreq;
-  filter.Q.value = q;
-  lfo.frequency.value = lfoFreq;
-  lfoGain.gain.value = lfoDepth;
-  lfo.connect(lfoGain);
-  lfoGain.connect(filter.frequency);
+  // Helper: MIDI note to frequency
+  const midiToFreq = (midi) => 440 * Math.pow(2, (midi - 69) / 12);
 
-  let tone=null, toneGain=null, pad2=null, pad2Gain=null;
-  if(toneFreq){
-    tone = ctx.createOscillator(); tone.type='sine'; tone.frequency.value = toneFreq;
-    toneGain = ctx.createGain(); toneGain.gain.value = toneGainVal;
-    tone.connect(toneGain).connect(audio.gain);
+  // 1. Water ambience layer (gentle, not harsh)
+  if(config.waterAmbience){
+    const waterBuf = makeWaterBuffer(ctx, 5);
+    const water = ctx.createBufferSource();
+    water.buffer = waterBuf;
+    water.loop = true;
+
+    const waterFilter = ctx.createBiquadFilter();
+    waterFilter.type = 'lowpass';
+    waterFilter.frequency.value = 800;
+
+    const waterGain = ctx.createGain();
+    waterGain.gain.value = 0.15;
+
+    water.connect(waterFilter).connect(waterGain).connect(audio.gain);
+    water.start();
+    nodes.push(water, waterFilter, waterGain);
   }
-  if(bgId==='fantasy'){
-    tone = ctx.createOscillator(); tone.type='sine'; tone.frequency.value = 220;
-    toneGain = ctx.createGain(); toneGain.gain.value = 0.02;
-    tone.connect(toneGain).connect(audio.gain);
 
-    pad2 = ctx.createOscillator(); pad2.type='sine'; pad2.frequency.value = 330;
-    pad2Gain = ctx.createGain(); pad2Gain.gain.value = 0.012;
-    pad2.connect(pad2Gain).connect(audio.gain);
+  // 2. Pad synth (sustained chords)
+  if(config.padSynth){
+    const padGain = ctx.createGain();
+    padGain.gain.value = 0.08;
+    padGain.connect(audio.gain);
+
+    const beatDuration = 60 / config.tempo;
+    const chordDuration = beatDuration * 4; // Each chord lasts 4 beats
+    const totalDuration = chordDuration * config.chords.length;
+
+    // Loop chords
+    const startChords = () => {
+      config.chords.forEach((chord, i) => {
+        const startTime = ctx.currentTime + i * chordDuration;
+        chord.forEach(semitone => {
+          const freq = midiToFreq(config.baseNote + semitone);
+          const {osc, noteGain} = playNote(ctx, freq, startTime, chordDuration * 0.95, padGain, 'triangle');
+          nodes.push(osc, noteGain);
+        });
+      });
+
+      // Schedule next loop
+      audio.current.chordTimeout = setTimeout(startChords, totalDuration * 1000);
+    };
+    startChords();
   }
 
-  noise.connect(filter).connect(audio.gain);
-  noise.start(); lfo.start(); if(tone) tone.start(); if(pad2) pad2.start();
+  // 3. Melody layer (optional)
+  if(config.melody){
+    const melodyGain = ctx.createGain();
+    melodyGain.gain.value = 0.12;
+    melodyGain.connect(audio.gain);
 
-  audio.current.nodes = [noise, filter, lfo, lfoGain, tone, toneGain, pad2, pad2Gain];
-  audio.current.stop = ()=>{
-    [noise,lfo,tone,pad2].forEach(n=>{ try{ n && n.stop(); }catch{} });
-    audio.current.nodes.forEach(n=>{ try{ n && n.disconnect(); }catch{} });
+    const beatDuration = 60 / config.tempo;
+    const melodyPattern = [0, 2, 4, 2, 5, 4, 2, 0]; // Simple ascending/descending melody
+
+    const startMelody = () => {
+      melodyPattern.forEach((scaleIndex, i) => {
+        const semitone = config.scale[scaleIndex % config.scale.length];
+        const freq = midiToFreq(config.baseNote + 12 + semitone); // One octave higher
+        const startTime = ctx.currentTime + i * beatDuration;
+        const {osc, noteGain} = playNote(ctx, freq, startTime, beatDuration * 0.8, melodyGain, 'sine');
+        nodes.push(osc, noteGain);
+      });
+
+      // Schedule next loop
+      const totalDuration = beatDuration * melodyPattern.length;
+      audio.current.melodyTimeout = setTimeout(startMelody, totalDuration * 1000);
+    };
+    startMelody();
+  }
+
+  // Cleanup function
+  audio.current.stop = () => {
+    clearTimeout(audio.current.chordTimeout);
+    clearTimeout(audio.current.melodyTimeout);
+    nodes.forEach(n => {
+      try {
+        if(n.stop) n.stop();
+        if(n.disconnect) n.disconnect();
+      } catch {}
+    });
   };
+  audio.current.nodes = nodes;
 }
 function updateAmbientForActiveTank(){
   const t = currentTank(); if(!t) return;
