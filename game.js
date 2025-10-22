@@ -10,7 +10,7 @@
    - ENHANCED BACKGROUNDS - Beautiful, immersive aquarium environments
    - PROCEDURAL MUSIC SYSTEM - Real melodic ambient music
    ========================================== */
-const GAME_VERSION = '5.3.0';
+const GAME_VERSION = '5.3.1';
 const PRESTIGE_BASE = 10_000_000; // starting prestige price
 const AUTOMATION_PASSWORD = 'HAX'; // Password for automation features
 const MAX_TANKS = 10; // Maximum number of parallel tanks
@@ -3656,10 +3656,19 @@ musicVol.oninput = ()=>{
 
   // Stop music if volume is 0
   if(v === 0 && audio.ctx){
+    audio.enabled = false;
     if(audio.current.stop) audio.current.stop();
     log('Background music disabled.');
-  } else if(v > 0 && audio.ctx && !audio.current.nodes.length){
-    updateAmbientForActiveTank();
+  } else if(v > 0 && audio.ctx){
+    // Enable audio and start music if not playing
+    if(!audio.enabled){
+      audio.enabled = true;
+      audio.ctx.resume();
+      updateAmbientForActiveTank();
+      log('Background music enabled.');
+    } else if(!audio.current.nodes.length){
+      updateAmbientForActiveTank();
+    }
   }
 
   save();

@@ -2,7 +2,7 @@
 
 An incremental browser game where you manage aquarium tanks, grow fish, and build your aquatic empire!
 
-![Version](https://img.shields.io/badge/version-5.3.0-blue)
+![Version](https://img.shields.io/badge/version-5.3.1-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![HTML5](https://img.shields.io/badge/HTML5-Canvas-orange)
 
@@ -193,7 +193,11 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 📊 Version History
 
-### v5.3.0 (Current) - Predator System & Idle Automation
+### v5.3.1 (Current) - Background Music Fix
+- **Audio Bug Fix** - Fixed background music not playing when volume slider moved above 0
+- **Improved Audio State Management** - Audio properly enables/disables with `audio.enabled` flag
+
+### v5.3.0 - Predator System & Idle Automation
 - **Predator Auto-Sell System** - 12 unique predators that hunt and auto-sell mature fish
 - **Animated Hunting** - Predators chase prey at 300 speed with smooth hunting animations
 - **5 Upgrade Levels** - Each predator has 5 levels with faster hunting intervals (11s to 2.5s)
