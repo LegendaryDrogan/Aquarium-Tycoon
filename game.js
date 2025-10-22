@@ -1,20 +1,134 @@
 /* ==========================================
-   Aquarium Tycoon (v5.0.0) - Visual Overhaul
-   - REALISTIC FISH SPRITES - Highly detailed pixel art matching real-life counterparts
+   Aquarium Tycoon (v5.2.0) - Visual Polish & UX
+   - ANIMATED COIN DROPS - Coins/money bags/diamonds fly to counter
+   - ACCORDION SHOP - Beautiful collapsible categories with shimmer effects
+   - TANK CAP - Maximum 10 parallel tanks with UI feedback
+   - STATISTICS DASHBOARD - Track lifetime progress & milestones
+   - ACHIEVEMENT SYSTEM - 38 funny, quippy achievements to unlock
+   - SOUND EFFECTS - Synthesized audio for all major game events
+   - REALISTIC FISH SPRITES - Highly detailed pixel art
    - ENHANCED BACKGROUNDS - Beautiful, immersive aquarium environments
-   - MODERN UI DESIGN - Polished interface with refined aesthetics
-   - CLEAN PROJECT STRUCTURE - Organized and production-ready
    - PROCEDURAL MUSIC SYSTEM - Real melodic ambient music
-   - Background tank simulation: all tanks grow fish & run automations
-   - Debug speed moved to Automations (password-protected)
-   - Responsive design optimized for all screen sizes
    ========================================== */
-const GAME_VERSION = '5.0.0';
+const GAME_VERSION = '5.2.1';
 const PRESTIGE_BASE = 10_000_000; // starting prestige price
 const AUTOMATION_PASSWORD = 'HAX'; // Password for automation features
+const MAX_TANKS = 10; // Maximum number of parallel tanks
 
 // Debug speed multiplier
 let debugSpeedMultiplier = 1;
+
+/* ---- Coin Particle System ---- */
+const coinParticles = []; // Active coin particles
+const COIN_TYPES = [
+  { threshold: 1000, icon: '💎', value: 1000 },  // Diamonds for 1000+
+  { threshold: 100, icon: '💰', value: 100 },   // Money bags for 100-999
+  { threshold: 1, icon: '🪙', value: 1 }         // Coins for 1-99
+];
+
+// Spawn coin particles at fish position
+function spawnCoinParticles(x, y, totalValue) {
+  let remaining = totalValue;
+  let spawnDelay = 0;
+
+  // Convert canvas coordinates to screen coordinates
+  const canvasRect = canvas.getBoundingClientRect();
+  const screenX = canvasRect.left + x;
+  const screenY = canvasRect.top + y;
+
+  // Break down value into currency types (largest first)
+  for (const coinType of COIN_TYPES) {
+    while (remaining >= coinType.threshold) {
+      const angle = Math.random() * Math.PI * 2;
+      const spread = 30 + Math.random() * 20;
+
+      coinParticles.push({
+        x: screenX + Math.cos(angle) * spread * 0.3, // Start slightly spread
+        y: screenY + Math.sin(angle) * spread * 0.3,
+        targetX: coinsEl.getBoundingClientRect().left + 50,
+        targetY: coinsEl.getBoundingClientRect().top + 20,
+        icon: coinType.icon,
+        life: 0,
+        maxLife: 1.0 + Math.random() * 0.3,
+        delay: spawnDelay,
+        vx: Math.cos(angle) * spread,
+        vy: Math.sin(angle) * spread
+      });
+
+      remaining -= coinType.value;
+      spawnDelay += 0.03; // Stagger spawns slightly
+
+      // Limit particles for performance
+      if (coinParticles.length > 100) break;
+    }
+    if (coinParticles.length > 100) break;
+  }
+}
+
+// Update and render coin particles
+function updateCoinParticles(dt) {
+  for (let i = coinParticles.length - 1; i >= 0; i--) {
+    const p = coinParticles[i];
+
+    // Handle spawn delay
+    if (p.delay > 0) {
+      p.delay -= dt;
+      continue;
+    }
+
+    p.life += dt;
+
+    // Remove completed particles
+    if (p.life >= p.maxLife) {
+      coinParticles.splice(i, 1);
+      continue;
+    }
+
+    // Easing: start fast, slow at end
+    const t = p.life / p.maxLife;
+    const ease = 1 - Math.pow(1 - t, 3); // ease-out cubic
+
+    // Position interpolation - pop out then float to target
+    if (t < 0.2) {
+      // Pop out phase
+      const popT = t / 0.2;
+      p.x += p.vx * dt * (1 - popT);
+      p.y += p.vy * dt * (1 - popT);
+    } else {
+      // Float to target phase - using screen coordinates now
+      p.x = p.x + (p.targetX - p.x) * dt * 4;
+      p.y = p.y + (p.targetY - p.y) * dt * 4;
+    }
+  }
+}
+
+function drawCoinParticles() {
+  // Clear the coin overlay canvas
+  coinCtx.clearRect(0, 0, coinCanvas.width, coinCanvas.height);
+
+  for (const p of coinParticles) {
+    if (p.delay > 0) continue;
+
+    const t = p.life / p.maxLife;
+    const alpha = t < 0.8 ? 1.0 : (1.0 - (t - 0.8) / 0.2); // Fade at end
+    const scale = t < 0.1 ? (t / 0.1) : 1.0; // Quick scale in
+
+    coinCtx.save();
+    coinCtx.globalAlpha = alpha;
+    coinCtx.font = `${24 * scale}px Arial`;
+    coinCtx.textAlign = 'center';
+    coinCtx.textBaseline = 'middle';
+
+    // Drop shadow for visibility
+    coinCtx.shadowColor = 'rgba(0, 0, 0, 0.5)';
+    coinCtx.shadowBlur = 4;
+    coinCtx.shadowOffsetX = 2;
+    coinCtx.shadowOffsetY = 2;
+
+    coinCtx.fillText(p.icon, p.x, p.y);
+    coinCtx.restore();
+  }
+}
 
 /* ---- Backgrounds ---- */
 const backgrounds = [
@@ -112,17 +226,92 @@ const RARITIES = [
 ];
 function rollRarity(){ if(Math.random()<RARITIES[3].chance) return RARITIES[3]; if(Math.random()<RARITIES[2].chance) return RARITIES[2]; if(Math.random()<RARITIES[1].chance) return RARITIES[1]; return RARITIES[0]; }
 
+/* ---- Achievements ---- */
+const achievements = [
+  // Beginner achievements
+  { id:'first_fish', name:'Getting Your Feet Wet', desc:'Buy your first fish', icon:'🐠', check:()=>state.stats.lifetimeFishBought >= 1 },
+  { id:'first_sale', name:'Fish Flipper', desc:'Sell your first fish', icon:'💰', check:()=>state.stats.lifetimeFishSold >= 1 },
+  { id:'coin_hoarder', name:'Penny Pincher', desc:'Accumulate 1,000 coins', icon:'🪙', check:()=>state.coins >= 1000 },
+  { id:'ten_fish', name:'School\'s In Session', desc:'Own 10 fish at once', icon:'🏫', check:()=>{ const t=currentTank(); return t && t.fish.length >= 10; }},
+  { id:'first_upgrade', name:'Level Up!', desc:'Upgrade any item to level 1', icon:'⬆️', check:()=>{ const t=currentTank(); return t && Object.values(t.items).some(v=>v>=1); }},
+
+  // Species-specific achievements
+  { id:'guppy_fan', name:'Guppy Enthusiast', desc:'Buy 25 Guppies', icon:'🐟', check:()=>state.stats.lifetimeFishBought >= 25 },
+  { id:'shark_week', name:'Shark Week', desc:'Own a Shark', icon:'🦈', check:()=>{ const t=currentTank(); return t && t.fish.some(f=>f.sp==='shark'); }},
+  { id:'eel_deal', name:'That\'s A-Moray!', desc:'Own 3 Eels at once', icon:'🐍', check:()=>{ const t=currentTank(); return t && t.fish.filter(f=>f.sp==='eel').length >= 3; }},
+  { id:'turtle_power', name:'Turtle Power', desc:'Max out a Turtle\'s growth', icon:'🐢', check:()=>{ const t=currentTank(); return t && t.fish.some(f=>f.sp==='turtle' && f.size>=1); }},
+  { id:'dolphin_rider', name:'So Long, And Thanks!', desc:'Own a Dolphin', icon:'🐬', check:()=>{ const t=currentTank(); return t && t.fish.some(f=>f.sp==='dolphin'); }},
+  { id:'angler_addiction', name:'Deep End', desc:'Own an Angler Fish', icon:'🔦', check:()=>{ const t=currentTank(); return t && t.fish.some(f=>f.sp==='angler'); }},
+
+  // Milestone achievements
+  { id:'millionaire', name:'Millionaire Club', desc:'Earn 1,000,000 lifetime coins', icon:'💎', check:()=>state.stats.lifetimeCoins >= 1_000_000 },
+  { id:'fish_market', name:'Fish Market Mogul', desc:'Sell 100 fish', icon:'🏪', check:()=>state.stats.lifetimeFishSold >= 100 },
+  { id:'fish_hoarder', name:'Compulsive Shopper', desc:'Buy 200 fish', icon:'🛒', check:()=>state.stats.lifetimeFishBought >= 200 },
+  { id:'big_spender', name:'Big Spender', desc:'Spend 100,000 coins on fish', icon:'💸', check:()=>state.stats.lifetimeFishBought * 1000 >= 100_000 },
+  { id:'prestige_once', name:'Prestige and Prejudice', desc:'Prestige for the first time', icon:'🏆', check:()=>state.stats.prestigeCount >= 1 },
+  { id:'prestige_5', name:'Prestige Worldwide', desc:'Prestige 5 times', icon:'🌍', check:()=>state.stats.prestigeCount >= 5 },
+  { id:'prestige_10', name:'Prestige God', desc:'Prestige 10 times', icon:'👑', check:()=>state.stats.prestigeCount >= 10 },
+
+  // Rarity achievements
+  { id:'rare_find', name:'Lucky Duck', desc:'Find a Rare fish', icon:'✨', check:()=>['RARE','EPIC','LEGENDARY'].includes(state.stats.rarestFish) },
+  { id:'epic_find', name:'Jackpot!', desc:'Find an Epic fish', icon:'💜', check:()=>['EPIC','LEGENDARY'].includes(state.stats.rarestFish) },
+  { id:'legendary_find', name:'Unicorn Finder', desc:'Find a Legendary fish', icon:'🦄', check:()=>state.stats.rarestFish==='LEGENDARY' },
+
+  // Tank & capacity achievements
+  { id:'tank_master', name:'Tank Commander', desc:'Own 3 tanks', icon:'🗂️', check:()=>state.tanks.length >= 3 },
+  { id:'tank_tycoon', name:'Tank Tycoon', desc:'Own 5 tanks', icon:'🏭', check:()=>state.tanks.length >= 5 },
+  { id:'full_tank', name:'Sardine Can', desc:'Fill a tank to 100% capacity', icon:'📦', check:()=>state.tanks.some(t=>t.fish.length >= totalCapacity(t)) },
+
+  // Upgrade achievements
+  { id:'feeder_max', name:'All You Can Eat', desc:'Max out Auto Feeder', icon:'🍔', check:()=>{ const t=currentTank(); return t && (t.items['feeder']||0) >= 25; }},
+  { id:'filter_max', name:'Crystal Clear', desc:'Max out Bio Filter', icon:'💧', check:()=>{ const t=currentTank(); return t && (t.items['filter']||0) >= 30; }},
+  { id:'heater_max', name:'Tropical Paradise', desc:'Max out Heater', icon:'🌡️', check:()=>{ const t=currentTank(); return t && (t.items['heater']||0) >= 25; }},
+  { id:'coral_max', name:'Coral Reef', desc:'Max out Decor', icon:'🪸', check:()=>{ const t=currentTank(); return t && (t.items['coral']||0) >= 25; }},
+  { id:'all_max', name:'Maxed Out', desc:'Max all items in one tank', icon:'🔝', check:()=>state.tanks.some(t=>(t.items['feeder']||0)>=25 && (t.items['heater']||0)>=25 && (t.items['coral']||0)>=25) },
+
+  // Background achievements
+  { id:'bg_collector', name:'Interior Designer', desc:'Unlock 5 backgrounds', icon:'🎨', check:()=>Object.keys(state.unlockedBackgrounds).length >= 5 },
+  { id:'bg_complete', name:'Background Check', desc:'Unlock all backgrounds', icon:'🖼️', check:()=>Object.keys(state.unlockedBackgrounds).length >= 10 },
+
+  // Value achievements
+  { id:'big_sale', name:'Whale of a Sale', desc:'Sell a fish for 10,000+ coins', icon:'🐋', check:()=>state.stats.mostValuableSale >= 10_000 },
+  { id:'huge_sale', name:'Legendary Sale', desc:'Sell a fish for 100,000+ coins', icon:'💰', check:()=>state.stats.mostValuableSale >= 100_000 },
+  { id:'massive_sale', name:'Mega Sale', desc:'Sell a fish for 1,000,000+ coins', icon:'💵', check:()=>state.stats.mostValuableSale >= 1_000_000 },
+
+  // Time-based achievements
+  { id:'dedicated', name:'Dedicated Player', desc:'Play for 1 hour total', icon:'⏰', check:()=>(state.stats.totalPlayTime + (Date.now()-state.stats.sessionStart)) >= 3600000 },
+  { id:'addicted', name:'Can\'t Stop Won\'t Stop', desc:'Play for 5 hours total', icon:'🎮', check:()=>(state.stats.totalPlayTime + (Date.now()-state.stats.sessionStart)) >= 18000000 },
+
+  // Misc achievements
+  { id:'automation_master', name:'Set It and Forget It', desc:'Enable automation', icon:'🤖', check:()=>{ const t=currentTank(); return t && (t.automation.autoSell || t.automation.autoBuy); }},
+  { id:'speed_demon', name:'Gotta Go Fast', desc:'Sell 50 fish in one session', icon:'⚡', check:()=>state.stats.lifetimeFishSold >= 50 },
+  { id:'collection_complete', name:'Gotta Catch \'Em All', desc:'Own all 12 fish species at once', icon:'📚', check:()=>{ const t=currentTank(); if(!t) return false; const uniqueSpecies = new Set(t.fish.map(f=>f.sp)); return uniqueSpecies.size >= 12; }},
+];
+
 /* ---- Settings & State ---- */
 const state = {
   version: GAME_VERSION,
   coins: 100,
   prestige: 0,
-  settings: { audio:false, volume:0.4, fpsCap:60, intensity:1.0 },
+  settings: { musicVolume:0, sfxVolume:0.75, intensity:1.0 }, // SFX on by default
   unlockedBackgrounds: { default: true }, // global unlocks
   automationUnlocked: false, // track automation unlock status
   tanks: [], // { uid,typeId,name,items,fish,lastTick,automation,backgroundId }
   activeTankUid: null,
-  nextUid: 1
+  nextUid: 1,
+  // Statistics tracking (lifetime, persists through prestige)
+  stats: {
+    lifetimeCoins: 0,      // total coins earned ever
+    lifetimeFishSold: 0,   // total fish sold
+    lifetimeFishBought: 0, // total fish bought
+    prestigeCount: 0,      // total times prestiged
+    totalPlayTime: 0,      // milliseconds played
+    sessionStart: Date.now(), // track current session
+    mostValuableSale: 0,   // highest single fish sale
+    rarestFish: 'COMMON'   // best rarity found
+  },
+  // Achievement tracking
+  achievements: {}
 };
 function prestigeCost(){ return Math.floor(PRESTIGE_BASE * Math.pow(3, state.prestige||0)); }
 
@@ -140,14 +329,19 @@ const prestigeBtn = document.getElementById('prestigeBtn');
 const toggleLogBtn = document.getElementById('toggleLog');
 const settingsBtn = document.getElementById('settingsBtn');
 const settingsOverlay = document.getElementById('settingsOverlay');
-const audioToggle = document.getElementById('audioToggle');
-const audioVol = document.getElementById('audioVol');
-const fpsCapSel = document.getElementById('fpsCap');
+const musicVol = document.getElementById('musicVol');
+const sfxVol = document.getElementById('sfxVol');
 const vizIntensity = document.getElementById('vizIntensity');
 const closeSettings = document.getElementById('closeSettings');
+const statsBtn = document.getElementById('statsBtn');
+const statsOverlay = document.getElementById('statsOverlay');
+const closeStats = document.getElementById('closeStats');
+const toastContainer = document.getElementById('toastContainer');
 
 const canvas = document.getElementById('aquarium');
 const ctx = canvas.getContext('2d', { alpha: true });
+const coinCanvas = document.getElementById('coinCanvas');
+const coinCtx = coinCanvas.getContext('2d', { alpha: true });
 let viewW=0, viewH=0;
 
 /* ---- Parallax plants & mouse ---- */
@@ -219,7 +413,15 @@ function roundRectPath(ctx, x, y, w, h, r=6){
 }
 
 /* ---- Save/Load ---- */
-function save(){ localStorage.setItem('aquariumSave_v2', JSON.stringify(state)); log('Game saved.'); }
+function save(){
+  // Update total play time before saving
+  const sessionTime = Date.now() - state.stats.sessionStart;
+  state.stats.totalPlayTime += sessionTime;
+  state.stats.sessionStart = Date.now(); // reset session timer
+
+  localStorage.setItem('aquariumSave_v2', JSON.stringify(state));
+  log('Game saved.');
+}
 function hardReset(){ if(confirm('Hard reset and clear your save?')){ localStorage.removeItem('aquariumSave_v2'); localStorage.removeItem('aquariumSave'); location.reload(); } }
 function migrateFromV1(raw){
   try{
@@ -237,7 +439,7 @@ function migrateFromV1(raw){
     };
     state.coins = v1.coins ?? 100;
     state.prestige = 0;
-    state.settings = { audio:false, volume:0.4, fpsCap:60, intensity:1.0 };
+    state.settings = { musicVolume:0, sfxVolume:0.75, intensity:1.0 };
     state.unlockedBackgrounds = { default: true };
     state.tanks = [tank];
     state.activeTankUid = tank.uid;
@@ -252,9 +454,27 @@ function load(){
       const data = JSON.parse(raw2);
       Object.assign(state, data);
       state.prestige = state.prestige||0;
-      state.settings = state.settings || { audio:false, volume:0.4, fpsCap:60, intensity:1.0 };
+      // Migrate old settings format to new format
+      if(state.settings && state.settings.audio !== undefined){
+        // Old format detected
+        state.settings = {
+          musicVolume: state.settings.audio ? (state.settings.volume || 0.4) : 0,
+          sfxVolume: 0.75, // Enable SFX by default
+          intensity: state.settings.intensity || 1.0
+        };
+      }
+      state.settings = state.settings || { musicVolume:0, sfxVolume:0.75, intensity:1.0 };
       state.unlockedBackgrounds = state.unlockedBackgrounds || { default: true };
       state.automationUnlocked = state.automationUnlocked || false;
+      // Initialize stats if missing
+      state.stats = state.stats || {
+        lifetimeCoins: 0, lifetimeFishSold: 0, lifetimeFishBought: 0,
+        prestigeCount: 0, totalPlayTime: 0, sessionStart: Date.now(),
+        mostValuableSale: 0, rarestFish: 'COMMON'
+      };
+      state.stats.sessionStart = Date.now(); // reset session timer on load
+      // Initialize achievements if missing
+      state.achievements = state.achievements || {};
       for(const t of state.tanks){
         t.automation = t.automation || { autoSell:false, autoBuy:false, mode:'smart', target:'guppy', reserve:0 };
         t.automation.mode = t.automation.mode || 'smart';
@@ -294,6 +514,7 @@ function prestige(){
   if(!confirm(msg)) return;
 
   state.prestige = (state.prestige||0) + 1;
+  state.stats.prestigeCount++; // Track prestige stat
 
   const t = {
     uid: 1,
@@ -312,8 +533,10 @@ function prestige(){
   state.nextUid = 2;
 
   state.unlockedBackgrounds = state.unlockedBackgrounds || { default: true };
-  state.settings = state.settings || { audio:false, volume:0.4, fpsCap:60, intensity:1.0 };
+  state.settings = state.settings || { musicVolume:0, sfxVolume:0.75, intensity:1.0 };
+  // NOTE: stats and achievements persist through prestige!
 
+  playSFX('prestige'); // Dramatic sound for prestige
   updateAmbientForActiveTank();
   log(`Prestiged to level ${state.prestige}. Cost next time: ${fmt(prestigeCost())}.`);
   save(); refreshStats(); refreshTankSelect(); renderShop(); applyTankBackground();
@@ -370,6 +593,22 @@ function buyFish(spId){
     wobble: Math.random()*Math.PI*2,
     seed: Math.floor(Math.random()*2**31)
   });
+
+  // Track stats
+  state.stats.lifetimeFishBought++;
+  // Track rarest fish found
+  const rarityOrder = ['COMMON', 'RARE', 'EPIC', 'LEGENDARY'];
+  if(rarityOrder.indexOf(rarity.key) > rarityOrder.indexOf(state.stats.rarestFish)){
+    state.stats.rarestFish = rarity.key;
+  }
+
+  // Sound effects
+  playSFX('buyFish');
+  playSFX('splash'); // Water splash when fish drops into tank
+  if(rarity.key !== 'COMMON'){
+    playSFX('rareFish');
+  }
+
   log(`Bought ${sp.name} for ${fmt(sp.cost)}${rarity.key!=='COMMON' ? ` — <${rarity.key}>` : ''}`);
   refreshStats(); renderShop(); refreshTankSelect();
 }
@@ -380,10 +619,26 @@ function sellFishById(id, note=''){
   const sp = species.find(s=>s.id===f.sp);
   const rar = RARITIES.find(r=>r.key===f.rarity) || RARITIES[0];
   const value = Math.floor(fishValue(t, sp, f.size, rar));
+
+  // Spawn coin particles at fish position
+  spawnCoinParticles(f.x, f.y, value);
+
   state.coins += value;
   t.fish.splice(idx,1);
+
+  // Track stats
+  state.stats.lifetimeCoins += value;
+  state.stats.lifetimeFishSold++;
+  if(value > state.stats.mostValuableSale){
+    state.stats.mostValuableSale = value;
+  }
+
+  // Sound effects
+  playSFX('sellFish');
+
   log(`Sold ${sp.name}${f.rarity!=='COMMON'?` (${f.rarity})`:''} for ${fmt(value)}.${note}`);
   refreshStats();
+  renderShop(); // Update shop to refresh available fish options
 }
 function sellMatureFish(){
   const t = currentTank(); if(!t) return;
@@ -393,16 +648,31 @@ function sellMatureFish(){
     if(f.size>=0.8){
       const sp = species.find(s=>s.id===f.sp);
       const rar = RARITIES.find(r=>r.key===f.rarity) || RARITIES[0];
-      coinsEarned += Math.floor(fishValue(t, sp, f.size, rar));
+      const value = Math.floor(fishValue(t, sp, f.size, rar));
+      coinsEarned += value;
+      if(value > state.stats.mostValuableSale){
+        state.stats.mostValuableSale = value;
+      }
       t.fish.splice(i,1); sold++;
     }
   }
-  if(sold){ state.coins+=coinsEarned; log(`Sold ${sold} mature fish for ${fmt(coinsEarned)}.`); refreshStats(); renderShop(); }
+  if(sold){
+    // Spawn particles from center of screen for bulk sales
+    spawnCoinParticles(viewW / 2, viewH / 2, coinsEarned);
+
+    state.coins+=coinsEarned;
+    state.stats.lifetimeCoins += coinsEarned;
+    state.stats.lifetimeFishSold += sold;
+    playSFX('sellFish'); // Play sound once for bulk sale
+    log(`Sold ${sold} mature fish for ${fmt(coinsEarned)}.`);
+    refreshStats(); renderShop();
+  }
   else log('No mature fish yet (need ≥80% growth).');
 }
 
 /* ---- Tanks management ---- */
 function addParallelTank(cost=2500){
+  if(state.tanks.length >= MAX_TANKS){ log(`Maximum tanks reached (${MAX_TANKS}/${MAX_TANKS}).`); return; }
   if(state.coins < cost){ log('Not enough coins for a new tank.'); return; }
   state.coins -= cost;
   const uid = nextUid();
@@ -426,6 +696,7 @@ function upgradeTankType(tankUid, newTypeId){
   state.coins -= tt.cost;
   t.typeId = newTypeId;
   if(t.uid===state.activeTankUid) applyTankBackground();
+  playSFX('upgrade'); // Sound effect for upgrade
   log(`Upgraded ${t.name} to ${tt.name} for ${fmt(tt.cost)}.`);
   refreshStats(); renderShop();
 }
@@ -440,18 +711,48 @@ function buyItem(itemId){
   if(state.coins < cost){ log('Not enough coins.'); return; }
   state.coins -= cost;
   t.items[itemId] = lvl+1;
+  playSFX('upgrade'); // Sound effect for upgrade
   log(`Upgraded ${def.name} in ${t.name} to Lv.${lvl+1} for ${fmt(cost)}.`);
   refreshStats(); renderShop();
 }
 
-/* ---- UI: Shop ---- */
-let activeTab='fish';
-document.querySelectorAll('.tab').forEach(b=>{
-  b.addEventListener('click',()=>{
-    document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
-    b.classList.add('active'); activeTab = b.getAttribute('data-tab'); renderShop();
+/* ---- UI: Shop (Accordion) ---- */
+let activeSection='fish'; // Currently open section
+
+// Initialize accordion handlers
+function initAccordion(){
+  document.querySelectorAll('.accordionHeader').forEach(header=>{
+    header.addEventListener('click',()=>{
+      const section = header.parentElement;
+      const sectionName = section.getAttribute('data-section');
+
+      // Toggle active section
+      if(activeSection === sectionName){
+        // Clicking active section closes it
+        section.classList.remove('active');
+        activeSection = null;
+      } else {
+        // Close all sections
+        document.querySelectorAll('.accordionSection').forEach(s=>s.classList.remove('active'));
+        // Open clicked section
+        section.classList.add('active');
+        activeSection = sectionName;
+      }
+
+      renderShop();
+    });
   });
-});
+
+  // Open first section by default
+  const firstSection = document.querySelector('.accordionSection[data-section="fish"]');
+  if(firstSection){
+    firstSection.classList.add('active');
+    activeSection = 'fish';
+  }
+}
+
+// Call after DOM loaded
+setTimeout(initAccordion, 100);
 
 function bgPreviewCSS(id){
   switch(id){
@@ -470,11 +771,18 @@ function bgPreviewCSS(id){
 }
 
 function renderShop(){
-  const t = currentTank(); if(!t){ listEl.innerHTML=''; return; }
+  const t = currentTank(); if(!t) return;
   const coins = state.coins;
-  listEl.innerHTML = '';
 
-  if(activeTab==='fish'){
+  // Clear all accordion contents
+  document.querySelectorAll('.accordionContent').forEach(content=>content.innerHTML='');
+
+  // Get active content area
+  if(!activeSection) return;
+  const contentEl = document.querySelector(`.accordionSection[data-section="${activeSection}"] .accordionContent`);
+  if(!contentEl) return;
+
+  if(activeSection==='fish'){
     species.forEach(sp=>{
       const full = t.fish.length >= totalCapacity(t);
       const afford = coins>=sp.cost;
@@ -492,15 +800,15 @@ function renderShop(){
       if(!afford && !full){ btn.classList.add('cant-afford'); btn.title='Not enough coins'; }
       if(full){ btn.title='Tank is full'; }
       btn.onclick=()=>buyFish(sp.id);
-      listEl.appendChild(div);
+      contentEl.appendChild(div);
     });
     const cap = document.createElement('div');
     cap.className='tiny';
     cap.innerHTML = `<div style="height:1px;background:#1a2946;margin:8px 0"></div>Capacity: <b>${t.fish.length}</b>/<b>${totalCapacity(t)}</b> in <b>${t.name}</b>`;
-    listEl.appendChild(cap);
+    contentEl.appendChild(cap);
   }
 
-  if(activeTab==='tanks'){
+  if(activeSection==='tanks'){
     state.tanks.forEach(inst=>{
       const tt = getTankType(inst.typeId);
       const isActive = inst.uid===state.activeTankUid;
@@ -513,12 +821,12 @@ function renderShop(){
         </div>
         <div><button ${isActive?'disabled':''}>Activate</button></div>`;
       div.querySelector('button').onclick=()=>{ state.activeTankUid=inst.uid; refreshStats(); refreshTankSelect(); applyTankBackground(); renderShop(); updateAmbientForActiveTank(); };
-      listEl.appendChild(div);
+      contentEl.appendChild(div);
     });
 
     const upHead = document.createElement('div'); upHead.className='tiny';
     upHead.innerHTML = `<div style="height:1px;background:#1a2946;margin:8px 0"></div><b>Upgrade Active Tank</b>`;
-    listEl.appendChild(upHead);
+    contentEl.appendChild(upHead);
 
     getUpgradesForActive().forEach(u=>{
       const afford = state.coins>=u.cost;
@@ -528,28 +836,36 @@ function renderShop(){
           <div class="title">${u.name}</div>
           <div class="muted">Capacity <b>${u.capacity}</b> • Growth bonus <b>${Math.round((u.growthBonus-1)*100)}%</b> • Cost <span class="price">${fmt(u.cost)}</span></div>
         </div>
-        <div><button ${afford?'':'disabled'}>Upgrade</button></div>`;
+        <div><button ${afford?'':'disabled'}>Unlock</button></div>`;
       const btn = div.querySelector('button');
       if(!afford){ btn.classList.add('cant-afford'); btn.title='Not enough coins'; }
       btn.onclick=()=>upgradeTankType(state.activeTankUid, u.id);
-      listEl.appendChild(div);
+      contentEl.appendChild(div);
     });
+
+    const addHead = document.createElement('div'); addHead.className='tiny';
+    addHead.innerHTML = `<div style="height:1px;background:#1a2946;margin:8px 0"></div><b>Expand Your Empire</b>`;
+    contentEl.appendChild(addHead);
 
     const add = document.createElement('div'); add.className='card';
     const affordTank = state.coins>=2500;
+    const atCap = state.tanks.length >= MAX_TANKS;
+    const tankPrice = fmt(2500);
     add.innerHTML = `
       <div>
-        <div class="title">Add Parallel Tank</div>
-        <div class="muted">Adds a new Starter Glass tank that runs in parallel. Cost <span class="price">${fmt(2500)}</span></div>
+        <div class="title">Add Parallel Tank ${atCap?'<span class="badge">Max Reached</span>':''}</div>
+        <div class="muted">${atCap?`Maximum of ${MAX_TANKS} tanks allowed.`:`Adds a new Starter Glass tank that runs in parallel. Cost <span class="price">${tankPrice}</span>`}</div>
+        ${atCap?`<div class="tiny">You own ${state.tanks.length}/${MAX_TANKS} tanks.</div>`:''}
       </div>
-      <div><button ${affordTank?'':'disabled'}>Buy</button></div>`;
+      <div><button ${(affordTank && !atCap)?'':'disabled'}>${atCap?'Maxed':'Buy'}</button></div>`;
     const addBtn = add.querySelector('button');
-    if(!affordTank){ addBtn.classList.add('cant-afford'); addBtn.title='Not enough coins'; }
+    if(!affordTank && !atCap){ addBtn.classList.add('cant-afford'); addBtn.title='Not enough coins'; }
+    if(atCap){ addBtn.title=`Maximum ${MAX_TANKS} tanks reached`; }
     addBtn.onclick=()=>addParallelTank(2500);
-    listEl.appendChild(add);
+    contentEl.appendChild(add);
   }
 
-  if(activeTab==='items'){
+  if(activeSection==='items'){
     const tInst = currentTank();
     itemsCatalog.forEach(def=>{
       const lvl = tInst.items[def.id]||0;
@@ -566,7 +882,7 @@ function renderShop(){
       const btn = div.querySelector('button');
       if(!maxed && !afford){ btn.classList.add('cant-afford'); btn.title='Not enough coins'; }
       btn.onclick=()=>buyItem(def.id);
-      listEl.appendChild(div);
+      contentEl.appendChild(div);
     });
 
     // Automations - Password Protected
@@ -583,7 +899,7 @@ function renderShop(){
             <button id="unlockAuto" class="btn-accent small">Unlock</button>
           </div>
         </div>`;
-      listEl.appendChild(auto);
+      contentEl.appendChild(auto);
 
       auto.querySelector('#unlockAuto').onclick = ()=>{
         const pw = auto.querySelector('#autoPassword').value;
@@ -617,7 +933,7 @@ function renderShop(){
           <button id="togSell" class="small toggle ${a.autoSell?'on':''}">${a.autoSell?'Auto-Sell: ON':'Auto-Sell: OFF'}</button>
           <button id="togBuy" class="small toggle ${a.autoBuy?'on':''}">${a.autoBuy?'Auto-Buy: ON':'Auto-Buy: OFF'}</button>
         </div>`;
-      listEl.appendChild(auto);
+      contentEl.appendChild(auto);
 
       auto.querySelector('#togSell').onclick = (e)=>{ a.autoSell = !a.autoSell; e.target.classList.toggle('on', a.autoSell); e.target.textContent = a.autoSell?'Auto-Sell: ON':'Auto-Sell: OFF'; log(`${tInst.name}: Auto-Sell ${a.autoSell?'enabled':'disabled'}.`); save(); };
       auto.querySelector('#togBuy').onclick  = (e)=>{ a.autoBuy  = !a.autoBuy;  e.target.classList.toggle('on', a.autoBuy ); e.target.textContent  = a.autoBuy?'Auto-Buy: ON':'Auto-Buy: OFF';  log(`${tInst.name}: Auto-Buy ${a.autoBuy?'enabled':'disabled'}.`); save(); };
@@ -645,7 +961,7 @@ function renderShop(){
           </div>
         </div>
         <div style="display:flex;align-items:center"><span class="badge">Tank: ${tInst.name}</span></div>`;
-      listEl.appendChild(controls);
+      contentEl.appendChild(controls);
 
       controls.querySelector('#autoMode').onchange = (e)=>{
         a.mode = e.target.value;
@@ -674,7 +990,7 @@ function renderShop(){
           </div>
         </div>
         <div style="display:flex;align-items:center"><span class="badge">Current: ${debugSpeedMultiplier}x</span></div>`;
-      listEl.appendChild(debugCard);
+      contentEl.appendChild(debugCard);
 
       debugCard.querySelector('#debugSpeed').onchange = (e)=>{
         debugSpeedMultiplier = parseInt(e.target.value,10)||1;
@@ -684,7 +1000,7 @@ function renderShop(){
     }
   }
 
-  if(activeTab==='backgrounds'){
+  if(activeSection==='backgrounds'){
     const tInst = currentTank();
     backgrounds.forEach(bg=>{
       const owned = !!state.unlockedBackgrounds[bg.id] || bg.cost===0;
@@ -723,7 +1039,46 @@ function renderShop(){
           }
         }
       };
-      listEl.appendChild(card);
+      contentEl.appendChild(card);
+    });
+  }
+
+  if(activeSection==='achievements'){
+    const unlocked = achievements.filter(a=>state.achievements[a.id]);
+    const locked = achievements.filter(a=>!state.achievements[a.id]);
+    const progress = document.createElement('div');
+    progress.className='tiny';
+    progress.innerHTML = `<b>Progress:</b> ${unlocked.length}/${achievements.length} unlocked (${Math.floor(unlocked.length/achievements.length*100)}%)`;
+    contentEl.appendChild(progress);
+
+    // Show unlocked achievements first
+    unlocked.forEach(ach=>{
+      const card = document.createElement('div');
+      card.className = 'achievementCard unlocked';
+      card.innerHTML = `
+        <span class="achIcon">${ach.icon}</span>
+        <div class="achContent">
+          <div class="achName">${ach.name}</div>
+          <div class="achDesc">${ach.desc}</div>
+        </div>
+        <div class="badge">✓</div>
+      `;
+      contentEl.appendChild(card);
+    });
+
+    // Then show locked achievements
+    locked.forEach(ach=>{
+      const card = document.createElement('div');
+      card.className = 'achievementCard locked';
+      card.innerHTML = `
+        <span class="achIcon">${ach.icon}</span>
+        <div class="achContent">
+          <div class="achName">${ach.name}</div>
+          <div class="achDesc">${ach.desc}</div>
+        </div>
+        <span class="achLockIcon">🔒</span>
+      `;
+      contentEl.appendChild(card);
     });
   }
 }
@@ -749,6 +1104,7 @@ function refreshStats(){
   growthMultEl.textContent = growthMultiplier(t).toFixed(2)+'×';
   prestigeEl.textContent = state.prestige||0;
   refreshTopButtons();
+  checkAchievements(); // Check for new achievements
 }
 function refreshTankSelect(){
   ensureActive();
@@ -761,6 +1117,12 @@ function resize(){
   const dpr = window.devicePixelRatio || 1;
   viewW = Math.max(300, rect.width|0); viewH = Math.max(300, rect.height|0);
   canvas.width = (viewW * dpr)|0; canvas.height = (viewH * dpr)|0; ctx.setTransform(dpr,0,0,dpr,0,0);
+
+  // Resize coin overlay canvas to full screen
+  coinCanvas.width = (window.innerWidth * dpr)|0;
+  coinCanvas.height = (window.innerHeight * dpr)|0;
+  coinCtx.setTransform(dpr,0,0,dpr,0,0);
+
   makePlants();
 }
 window.addEventListener('resize', resize);
@@ -2251,19 +2613,90 @@ settingsBtn.onclick = ()=>{ settingsOverlay.classList.add('show'); syncSettingsU
 closeSettings.onclick = ()=>{ settingsOverlay.classList.remove('show'); save(); };
 settingsOverlay.addEventListener('click', (e)=>{ if(e.target===settingsOverlay) settingsOverlay.classList.remove('show'); });
 
+// Stats modal
+function updateStatsDisplay(){
+  // Update play time
+  const totalMs = state.stats.totalPlayTime + (Date.now() - state.stats.sessionStart);
+  const totalHours = Math.floor(totalMs / 3600000);
+  const totalMins = Math.floor((totalMs % 3600000) / 60000);
+  document.getElementById('statPlayTime').textContent = `${totalHours}h ${totalMins}m`;
+
+  const sessionMs = Date.now() - state.stats.sessionStart;
+  const sessionMins = Math.floor(sessionMs / 60000);
+  const sessionSecs = Math.floor((sessionMs % 60000) / 1000);
+  document.getElementById('statSessionTime').textContent = `${sessionMins}m ${sessionSecs}s`;
+
+  // Update other stats
+  document.getElementById('statLifetimeCoins').textContent = fmt(state.stats.lifetimeCoins);
+  document.getElementById('statFishSold').textContent = fmt(state.stats.lifetimeFishSold);
+  document.getElementById('statFishBought').textContent = fmt(state.stats.lifetimeFishBought);
+  document.getElementById('statPrestigeCount').textContent = fmt(state.stats.prestigeCount);
+  document.getElementById('statBestSale').textContent = fmt(state.stats.mostValuableSale);
+  document.getElementById('statRarestFish').textContent = state.stats.rarestFish;
+}
+statsBtn.onclick = ()=>{
+  updateStatsDisplay();
+  statsOverlay.classList.add('show');
+};
+closeStats.onclick = ()=>{ statsOverlay.classList.remove('show'); };
+statsOverlay.addEventListener('click', (e)=>{ if(e.target===statsOverlay) statsOverlay.classList.remove('show'); });
+
+// Achievement system
+function showToast(achievement){
+  playSFX('achievement'); // Play achievement sound
+
+  const toast = document.createElement('div');
+  toast.className = 'toast';
+  toast.innerHTML = `
+    <span class="toastIcon">${achievement.icon}</span>
+    <div class="toastTitle">${achievement.name}</div>
+    <div class="toastDesc">${achievement.desc}</div>
+  `;
+  toastContainer.appendChild(toast);
+
+  // Auto-dismiss after 5 seconds
+  setTimeout(()=>{
+    toast.classList.add('fadeOut');
+    setTimeout(()=>toast.remove(), 300);
+  }, 5000);
+
+  // Click to dismiss
+  toast.onclick = ()=>{
+    toast.classList.add('fadeOut');
+    setTimeout(()=>toast.remove(), 300);
+  };
+}
+
+function checkAchievements(){
+  for(const ach of achievements){
+    if(!state.achievements[ach.id] && ach.check()){
+      state.achievements[ach.id] = Date.now(); // timestamp when unlocked
+      showToast(ach);
+      log(`🏆 Achievement Unlocked: ${ach.name}!`);
+      save();
+    }
+  }
+}
+
 document.addEventListener('keydown',(e)=>{
   if(e.key==='s'||e.key==='S') sellMatureFish();
-  if(e.key==='1') setTab('fish');
-  if(e.key==='2') setTab('tanks');
-  if(e.key==='3') setTab('items');
-  if(e.key==='4') setTab('backgrounds');
+  if(e.key==='1') setSection('fish');
+  if(e.key==='2') setSection('tanks');
+  if(e.key==='3') setSection('items');
+  if(e.key==='4') setSection('backgrounds');
+  if(e.key==='5') setSection('achievements');
   if((e.ctrlKey||e.metaKey) && e.key.toLowerCase()==='s'){ e.preventDefault(); save(); }
 });
-function setTab(tab){
-  activeTab=tab;
-  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
-  const btn=document.querySelector(`.tab[data-tab="${tab}"]`); if(btn) btn.classList.add('active');
-  renderShop();
+function setSection(sectionName){
+  // Close all sections first
+  document.querySelectorAll('.accordionSection').forEach(s=>s.classList.remove('active'));
+  // Open requested section
+  const section = document.querySelector(`.accordionSection[data-section="${sectionName}"]`);
+  if(section){
+    section.classList.add('active');
+    activeSection = sectionName;
+    renderShop();
+  }
 }
 tankSelectEl.addEventListener('change', ()=>{ state.activeTankUid = Number(tankSelectEl.value); refreshStats(); applyTankBackground(); renderShop(); updateAmbientForActiveTank(); });
 
@@ -2274,6 +2707,7 @@ let autoTimer=0;
 function tick(){
   const now=Date.now(); const dt=(now-lastFrame)/1000; lastFrame=now;
   simulateAll(Math.min(dt,0.05));
+  updateCoinParticles(dt); // Update coin particle animations
 
   const cap = state.settings?.fpsCap||0;
   if(cap>0){
@@ -2291,6 +2725,7 @@ function tick(){
   const t=currentTank(); if(t) for(const f of t.fish) renderSprite(f);
 
   drawForeground();
+  drawCoinParticles(); // Draw coin particles on top of everything
   requestAnimationFrame(tick);
 }
 function simulateAll(dt){
@@ -2414,7 +2849,7 @@ function initAudio(){
   try{
     audio.ctx = new (window.AudioContext || window.webkitAudioContext)();
     audio.gain = audio.ctx.createGain();
-    audio.gain.gain.value = state.settings.volume ?? 0.4;
+    audio.gain.gain.value = state.settings.musicVolume ?? 0;
     audio.gain.connect(audio.ctx.destination);
     return true;
   }catch(e){ console.warn('Audio init failed', e); return false; }
@@ -2438,6 +2873,187 @@ function makeWaterBuffer(ctx, seconds=4){
   return buf;
 }
 
+/* ========== Sound Effects (Synthesized) ========== */
+const soundEffects = {
+  // Bubble "bloop" for buying fish
+  buyFish: (ctx, gainNode) => {
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(300, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(500, ctx.currentTime + 0.1);
+    gain.gain.setValueAtTime(0.15, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.15);
+    osc.connect(gain);
+    gain.connect(gainNode);
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + 0.15);
+  },
+
+  // Cash register "cha-ching" for selling fish
+  sellFish: (ctx, gainNode) => {
+    const times = [0, 0.05, 0.1];
+    const freqs = [800, 1200, 1000];
+    times.forEach((time, i) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(freqs[i], ctx.currentTime + time);
+      gain.gain.setValueAtTime(0.12, ctx.currentTime + time);
+      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + time + 0.15);
+      osc.connect(gain);
+      gain.connect(gainNode);
+      osc.start(ctx.currentTime + time);
+      osc.stop(ctx.currentTime + time + 0.15);
+    });
+  },
+
+  // Power-up ascending arpeggio for upgrades
+  upgrade: (ctx, gainNode) => {
+    const notes = [261.63, 329.63, 392.00, 523.25]; // C E G C
+    notes.forEach((freq, i) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'square';
+      osc.frequency.setValueAtTime(freq, ctx.currentTime + i * 0.08);
+      gain.gain.setValueAtTime(0.1, ctx.currentTime + i * 0.08);
+      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + i * 0.08 + 0.15);
+      osc.connect(gain);
+      gain.connect(gainNode);
+      osc.start(ctx.currentTime + i * 0.08);
+      osc.stop(ctx.currentTime + i * 0.08 + 0.15);
+    });
+  },
+
+  // Dramatic fanfare for prestige
+  prestige: (ctx, gainNode) => {
+    // Main chord
+    const chord = [523.25, 659.25, 783.99]; // C E G
+    chord.forEach(freq => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(freq, ctx.currentTime);
+      gain.gain.setValueAtTime(0.08, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.8);
+      osc.connect(gain);
+      gain.connect(gainNode);
+      osc.start(ctx.currentTime);
+      osc.stop(ctx.currentTime + 0.8);
+    });
+    // Top note flourish
+    setTimeout(() => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(1046.50, ctx.currentTime); // C6
+      gain.gain.setValueAtTime(0.12, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
+      osc.connect(gain);
+      gain.connect(gainNode);
+      osc.start(ctx.currentTime);
+      osc.stop(ctx.currentTime + 0.5);
+    }, 300);
+  },
+
+  // Sparkle/chime for achievement
+  achievement: (ctx, gainNode) => {
+    const notes = [523.25, 659.25, 783.99, 1046.50]; // C E G C
+    notes.forEach((freq, i) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(freq, ctx.currentTime + i * 0.06);
+      gain.gain.setValueAtTime(0.15, ctx.currentTime + i * 0.06);
+      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + i * 0.06 + 0.4);
+      osc.connect(gain);
+      gain.connect(gainNode);
+      osc.start(ctx.currentTime + i * 0.06);
+      osc.stop(ctx.currentTime + i * 0.06 + 0.4);
+    });
+  },
+
+  // Soft click for UI
+  click: (ctx, gainNode) => {
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(800, ctx.currentTime);
+    gain.gain.setValueAtTime(0.05, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.05);
+    osc.connect(gain);
+    gain.connect(gainNode);
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + 0.05);
+  },
+
+  // Special shimmer for rare fish
+  rareFish: (ctx, gainNode) => {
+    for (let i = 0; i < 5; i++) {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(1000 + Math.random() * 500, ctx.currentTime + i * 0.05);
+      gain.gain.setValueAtTime(0.08, ctx.currentTime + i * 0.05);
+      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + i * 0.05 + 0.3);
+      osc.connect(gain);
+      gain.connect(gainNode);
+      osc.start(ctx.currentTime + i * 0.05);
+      osc.stop(ctx.currentTime + i * 0.05 + 0.3);
+    }
+  },
+
+  // Water splash for fish drop
+  splash: (ctx, gainNode) => {
+    // Initial impact - sharp noise burst
+    const noiseGain = ctx.createGain();
+    const bufferSize = ctx.sampleRate * 0.1;
+    const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) {
+      data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (bufferSize * 0.3));
+    }
+    const noise = ctx.createBufferSource();
+    noise.buffer = buffer;
+    noiseGain.gain.setValueAtTime(0.15, ctx.currentTime);
+    noiseGain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.1);
+    noise.connect(noiseGain);
+    noiseGain.connect(gainNode);
+    noise.start(ctx.currentTime);
+
+    // Water ripple - descending tone
+    const osc = ctx.createOscillator();
+    const oscGain = ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(600, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(150, ctx.currentTime + 0.2);
+    oscGain.gain.setValueAtTime(0.1, ctx.currentTime);
+    oscGain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.2);
+    osc.connect(oscGain);
+    oscGain.connect(gainNode);
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + 0.2);
+  }
+};
+
+// Play a sound effect
+function playSFX(effect){
+  if(state.settings.sfxVolume === 0) return;
+
+  // Initialize audio context if needed (for SFX)
+  if(!audio.ctx){
+    if(!initAudio()) return;
+  }
+
+  try{
+    // Create a temporary gain node for SFX volume control
+    const sfxGain = audio.ctx.createGain();
+    sfxGain.gain.value = state.settings.sfxVolume ?? 0.75;
+    sfxGain.connect(audio.ctx.destination);
+    soundEffects[effect](audio.ctx, sfxGain);
+  }catch(e){ console.warn(`SFX error: ${effect}`, e); }
+}
+
 // Musical scales for different moods
 const musicalScales = {
   peaceful: [0, 2, 4, 5, 7, 9, 11], // Major scale (C major)
@@ -2455,23 +3071,26 @@ function playNote(ctx, frequency, startTime, duration, gainNode, waveType='sine'
   osc.type = waveType;
   osc.frequency.value = frequency;
 
+  // Ensure startTime is never negative or in the past
+  const safeStartTime = Math.max(startTime, ctx.currentTime);
+
   // ADSR envelope (Attack, Decay, Sustain, Release)
   const attack = 0.1;
   const decay = 0.2;
   const sustain = 0.4;
   const release = 0.5;
 
-  noteGain.gain.setValueAtTime(0, startTime);
-  noteGain.gain.linearRampToValueAtTime(0.3, startTime + attack);
-  noteGain.gain.linearRampToValueAtTime(sustain, startTime + attack + decay);
-  noteGain.gain.setValueAtTime(sustain, startTime + duration - release);
-  noteGain.gain.linearRampToValueAtTime(0, startTime + duration);
+  noteGain.gain.setValueAtTime(0, safeStartTime);
+  noteGain.gain.linearRampToValueAtTime(0.3, safeStartTime + attack);
+  noteGain.gain.linearRampToValueAtTime(sustain, safeStartTime + attack + decay);
+  noteGain.gain.setValueAtTime(sustain, safeStartTime + duration - release);
+  noteGain.gain.linearRampToValueAtTime(0, safeStartTime + duration);
 
   osc.connect(noteGain);
   noteGain.connect(gainNode);
 
-  osc.start(startTime);
-  osc.stop(startTime + duration);
+  osc.start(safeStartTime);
+  osc.stop(safeStartTime + duration);
 
   return {osc, noteGain};
 }
@@ -2631,40 +3250,58 @@ function updateAmbientForActiveTank(){
 
 /* ---- Settings UI sync ---- */
 function syncSettingsUIFromState(){
-  audioToggle.checked = !!state.settings.audio;
-  audioVol.value = state.settings.volume ?? 0.4;
-  fpsCapSel.value = String(state.settings.fpsCap ?? 60);
+  musicVol.value = state.settings.musicVolume ?? 0;
+  sfxVol.value = state.settings.sfxVolume ?? 0.75;
   vizIntensity.value = state.settings.intensity ?? 1.0;
+  // Update displays
+  document.getElementById('musicVolDisplay').textContent = `${Math.round(Number(musicVol.value) * 100)}%`;
+  document.getElementById('sfxVolDisplay').textContent = `${Math.round(Number(sfxVol.value) * 100)}%`;
+  document.getElementById('vizDisplay').textContent = `${Number(vizIntensity.value).toFixed(1)}x`;
 }
-audioToggle.onchange = ()=>{
-  state.settings.audio = audioToggle.checked;
-  if(state.settings.audio){
+
+// Music volume handler
+musicVol.oninput = ()=>{
+  const v = Number(musicVol.value||0);
+  state.settings.musicVolume = v;
+  document.getElementById('musicVolDisplay').textContent = `${Math.round(v * 100)}%`;
+
+  // Init audio if needed
+  if(v > 0 && !audio.ctx){
     if(initAudio()){
       audio.enabled = true;
       audio.ctx.resume();
-      audio.gain.gain.value = state.settings.volume ?? 0.4;
       updateAmbientForActiveTank();
-      log('Ambient audio enabled.');
+      log('Background music enabled.');
     }
-  } else {
-    audio.enabled = false;
-    if(audio.ctx) audio.ctx.suspend();
-    if(audio.current.stop) audio.current.stop();
-    log('Ambient audio disabled.');
   }
+
+  // Update gain
+  if(audio.gain) audio.gain.gain.value = v;
+
+  // Stop music if volume is 0
+  if(v === 0 && audio.ctx){
+    if(audio.current.stop) audio.current.stop();
+    log('Background music disabled.');
+  } else if(v > 0 && audio.ctx && !audio.current.nodes.length){
+    updateAmbientForActiveTank();
+  }
+
   save();
 };
-audioVol.oninput = ()=>{
-  const v = Number(audioVol.value||0);
-  state.settings.volume = v;
-  if(audio.gain) audio.gain.gain.value = v;
+
+// SFX volume handler
+sfxVol.oninput = ()=>{
+  const v = Number(sfxVol.value||0);
+  state.settings.sfxVolume = v;
+  document.getElementById('sfxVolDisplay').textContent = `${Math.round(v * 100)}%`;
+  save();
 };
-fpsCapSel.onchange = ()=>{
-  state.settings.fpsCap = parseInt(fpsCapSel.value,10)||0;
-  log(`FPS cap set to ${state.settings.fpsCap||'Unlimited'}.`);
-};
+
+// Visual intensity handler
 vizIntensity.oninput = ()=>{
   state.settings.intensity = Number(vizIntensity.value||1);
+  document.getElementById('vizDisplay').textContent = `${vizIntensity.value}x`;
+  save();
 };
 
 /* ---- Boot ---- */
@@ -2683,7 +3320,7 @@ function init(){
   resize(); refreshTankSelect(); applyTankBackground(); refreshStats(); renderShop();
   makePlants();
   syncSettingsUIFromState();
-  if(state.settings.audio){ if(initAudio()){ audio.enabled=true; audio.ctx.resume(); updateAmbientForActiveTank(); } }
+  if(state.settings.musicVolume > 0){ if(initAudio()){ audio.enabled=true; audio.ctx.resume(); updateAmbientForActiveTank(); } }
   applyOfflineProgressAll();
   requestAnimationFrame(()=>{ lastFrame=Date.now(); tick(); });
 }

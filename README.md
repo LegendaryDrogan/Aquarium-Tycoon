@@ -2,7 +2,7 @@
 
 An incremental browser game where you manage aquarium tanks, grow fish, and build your aquatic empire!
 
-![Version](https://img.shields.io/badge/version-5.0.0-blue)
+![Version](https://img.shields.io/badge/version-5.2.1-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![HTML5](https://img.shields.io/badge/HTML5-Canvas-orange)
 
@@ -191,7 +191,27 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 📊 Version History
 
-### v5.0.0 (Current) - Visual Overhaul
+### v5.2.1 (Current) - Audio System Overhaul
+- **Separate Audio Controls** - Independent volume sliders for background music and sound effects
+- **Smart Audio Initialization** - SFX enabled by default at 75%, music off by default
+- **Splash Sound Effect** - New water splash sound when fish drop into the tank
+- **Coin Particle Overlay** - Coins now fly over UI elements from tank to counter
+- **UI Text Improvements** - Better labeling for tank selector and upgrade buttons
+- **Bug Fixes** - Fixed shop refresh after selling fish, audio timing errors
+
+### v5.2.0 - Visual Polish & UX
+- **Animated Coin Drops** - Currency particles (coins/bags/diamonds) based on sale value
+- **Accordion Shop Redesign** - Beautiful collapsible sections with shimmer header
+- **Tank Cap System** - Maximum of 10 parallel tanks with clear UI feedback
+- **Smart Value Breakdown** - Coins intelligently split into appropriate currency types
+
+### v5.1.0 - Statistics & Achievements
+- **Statistics Dashboard** - Lifetime tracking for coins, fish, sales, and playtime
+- **Achievement System** - 38 funny achievements with toast notifications
+- **Synthesized Sound Effects** - 8 different Web Audio API sounds for all game events
+- **Enhanced Progression** - Track your aquarium empire's growth over time
+
+### v5.0.0 - Visual Overhaul
 - **Realistic Fish Sprites** - Completely redesigned sprites with lifelike details
 - **Enhanced Backgrounds** - Beautiful, detailed aquarium environments with improved graphics
 - **Modern UI Design** - Polished interface with refined aesthetics and smooth animations

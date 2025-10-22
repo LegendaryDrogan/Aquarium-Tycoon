@@ -4,26 +4,28 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is **Aquarium Tycoon** (v5.0.0), an incremental browser game built with vanilla JavaScript and HTML5 Canvas. This version features a complete visual overhaul with highly detailed, realistic fish sprites, enhanced backgrounds with immersive graphics, and a modern, polished UI design. The project uses a clean, modular file structure optimized for production.
+This is **Aquarium Tycoon** (v5.2.1), an incremental browser game built with vanilla JavaScript and HTML5 Canvas. This version features an overhauled audio system with separate music/SFX controls, splash sound effects, coin particles that overlay UI, and various UX improvements. The game includes detailed fish sprites, enhanced backgrounds, achievements, statistics tracking, and a modern UI design.
 
 ## Architecture
 
 ### Modular Structure
 The project is split into separate files:
-1. **index.html** (~90 lines): HTML structure with topbar, shop panel, tank canvas, and modals
-2. **styles.css** (~500 lines): Complete styling using CSS custom properties for theming
-3. **game.js** (~1900 lines): All game mechanics, rendering, and state management
+1. **index.html** (~192 lines): HTML structure with topbar, accordion shop, tank canvas, modals, and coin overlay
+2. **styles.css** (~1200 lines): Complete styling using CSS custom properties for theming
+3. **game.js** (~3300 lines): All game mechanics, rendering, audio, achievements, and state management
 4. **assets/fish/**: PNG sprite images for all 12 fish species
 
 ### Core Game Systems
 
 **State Management**
-- Global `state` object (line ~256) contains:
-  - `tanks[]`: Array of tank instances that simulate in parallel
+- Global `state` object (line ~289) contains:
+  - `tanks[]`: Array of tank instances that simulate in parallel (max 10)
   - `activeTankUid`: Currently viewed tank
   - `coins`, `prestige`: Global currency and progression
   - `unlockedBackgrounds`: Global background purchases
-  - `settings`: Audio, FPS cap, visual intensity
+  - `settings`: { musicVolume, sfxVolume, intensity }
+  - `stats`: Lifetime tracking (coins, fish sold/bought, playtime, etc.)
+  - `achievements`: 38 achievements with unlock tracking
 - Save/load uses localStorage key `'aquariumSave_v2'` with migration from v1 format
 
 **Tank System (lines ~542-570)**
@@ -63,14 +65,28 @@ Each tank is an independent instance with:
 - Parallax plant layers (front/back) respond to mouse position
 - Maturity progress bars rendered above fish with rarity-colored rims
 
-**Audio System (v3.3.0)**
-- Procedural music generation using Web Audio API
-- Musical scales (Major, Minor, Pentatonic, etc.)
-- Real chord progressions (I-IV-V-I patterns)
+**Audio System (v5.2.1)**
+- **Separate Volume Controls**: Independent sliders for background music and sound effects
+- **Smart Initialization**: SFX enabled by default (75%), music off by default
+- **Procedural Music**: Web Audio API generation with musical scales and chord progressions
+- **8 Sound Effects**: buyFish, sellFish, upgrade, prestige, achievement, rareFish, click, splash
+- **Splash Effect**: New water splash sound when fish drop into tank
 - Tempo and mood matched to each background
 - ADSR envelope for natural note attack/decay
-- Layered synthesis: pads, melodies, water ambience
-- No more harsh static noise!
+- Settings migration from old audio format
+
+**Coin Particle System (v5.2.0)**
+- **Overlay Canvas**: Separate `#coinCanvas` overlay renders particles above all UI (z-index: 9999)
+- **Smart Currency**: Breaks down values into 💎 diamonds (1000+), 💰 money bags (100-999), 🪙 coins (1-99)
+- **Screen Coordinates**: Particles fly from fish position in tank to coin counter in topbar
+- **Two-Phase Animation**: Pop-out phase (0-20%) then float-to-target phase (20-100%)
+- **Performance**: Limited to 100 particles with staggered spawning
+
+**Shop System (v5.2.0)**
+- **Accordion UI**: Collapsible sections instead of tabs
+- **5 Sections**: Fish Market, Tank Management, Equipment & Items, Backgrounds, Achievements
+- **Shimmer Header**: Animated gradient effect on shop title
+- **Tank Cap**: Maximum 10 parallel tanks with "Max Reached" badge
 
 **Automation (lines ~710-755)**
 - Per-tank auto-sell: Sells fish at ≥80% maturity

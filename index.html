@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Aquarium Tycoon — v5.0.0</title>
+<title>Aquarium Tycoon — v5.2.1</title>
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -14,10 +14,11 @@
       <div class="stat">🐟 Fish: <span id="fishCount" class="val">0</span> / <span id="capacity" class="val">0</span></div>
       <div class="stat">⚙️ Growth: <span id="growthMult" class="val">1.00×</span></div>
       <div class="stat">🏆 Prestige: <span id="prestige" class="val">0</span></div>
-      <div class="stat">🗂️ Tank: <select id="tankSelect"></select></div>
+      <div class="stat">🗂️ Select Tank: <select id="tankSelect"></select></div>
     </div>
     <div class="midbar">
       <button id="toggleLog" class="small">📜 Logs</button>
+      <button id="statsBtn" class="small">📊 Stats</button>
     </div>
     <div class="controls">
       <button id="settingsBtn" class="btn-accent">Settings</button>
@@ -29,14 +30,58 @@
   </div>
 
   <div class="shop">
-    <h3>Shop</h3>
-    <div class="tabs">
-      <button class="tab active" data-tab="fish">Fish</button>
-      <button class="tab" data-tab="tanks">Tanks</button>
-      <button class="tab" data-tab="items">Items</button>
-      <button class="tab" data-tab="backgrounds">Backgrounds</button>
+    <div class="shopHeader">
+      <div class="shopTitle">🏪 Aquarium Shop</div>
+      <div class="shopSubtitle">Grow your aquatic empire</div>
     </div>
-    <div id="list" class="list"></div>
+
+    <div class="accordion">
+      <div class="accordionSection" data-section="fish">
+        <div class="accordionHeader">
+          <span class="accordionIcon">🐟</span>
+          <span class="accordionTitle">Fish Market</span>
+          <span class="accordionChevron">▼</span>
+        </div>
+        <div class="accordionContent"></div>
+      </div>
+
+      <div class="accordionSection" data-section="tanks">
+        <div class="accordionHeader">
+          <span class="accordionIcon">🗂️</span>
+          <span class="accordionTitle">Tank Management</span>
+          <span class="accordionChevron">▼</span>
+        </div>
+        <div class="accordionContent"></div>
+      </div>
+
+      <div class="accordionSection" data-section="items">
+        <div class="accordionHeader">
+          <span class="accordionIcon">⚙️</span>
+          <span class="accordionTitle">Equipment & Items</span>
+          <span class="accordionChevron">▼</span>
+        </div>
+        <div class="accordionContent"></div>
+      </div>
+
+      <div class="accordionSection" data-section="backgrounds">
+        <div class="accordionHeader">
+          <span class="accordionIcon">🎨</span>
+          <span class="accordionTitle">Backgrounds</span>
+          <span class="accordionChevron">▼</span>
+        </div>
+        <div class="accordionContent"></div>
+      </div>
+
+      <div class="accordionSection" data-section="achievements">
+        <div class="accordionHeader">
+          <span class="accordionIcon">🏆</span>
+          <span class="accordionTitle">Achievements</span>
+          <span class="accordionChevron">▼</span>
+        </div>
+        <div class="accordionContent"></div>
+      </div>
+    </div>
+
     <div class="tiny" style="padding:10px 12px;border-top:1px solid #1b2a47">
       Tip: Auto-Sell dumps ≥80% fish. Auto-Buy fills capacity with Smart (expensive-first) or a Target species, respecting your reserve.
     </div>
@@ -57,30 +102,92 @@
   </div>
 </div>
 
+<!-- Coin Particle Overlay Canvas (sits above all UI) -->
+<canvas id="coinCanvas"></canvas>
+
 <!-- Settings Modal -->
 <div id="settingsOverlay" class="modalOverlay">
   <div class="modal">
-    <h3>Settings</h3>
-    <div class="row">
-      <label><input type="checkbox" id="audioToggle"> Enable Ambient Audio</label>
-      <label>Volume <input type="range" id="audioVol" min="0" max="1" step="0.01" style="width:180px"></label>
+    <h3>⚙️ Settings</h3>
+    <div class="settingsSection">
+      <h4>🔊 Audio Controls</h4>
+      <div class="row">
+        <label>
+          <span class="settingLabel">🎵 Background Music Volume</span>
+          <input type="range" id="musicVol" min="0" max="1" step="0.01" value="0" style="width:200px">
+          <span id="musicVolDisplay" class="volDisplay">0%</span>
+        </label>
+      </div>
+      <div class="row">
+        <label>
+          <span class="settingLabel">🔊 Sound Effects Volume</span>
+          <input type="range" id="sfxVol" min="0" max="1" step="0.01" value="0.75" style="width:200px">
+          <span id="sfxVolDisplay" class="volDisplay">75%</span>
+        </label>
+      </div>
     </div>
-    <div class="row">
-      <label>FPS Cap
-        <select id="fpsCap">
-          <option value="0">Unlimited</option>
-          <option value="30">30</option>
-          <option value="60" selected>60</option>
-          <option value="120">120</option>
-        </select>
-      </label>
-      <label>Visual Intensity <input type="range" id="vizIntensity" min="0.5" max="1.5" step="0.05" value="1" style="width:180px"></label>
+    <div class="settingsSection">
+      <h4>✨ Visual Settings</h4>
+      <div class="row">
+        <label>
+          <span class="settingLabel">Visual Intensity</span>
+          <input type="range" id="vizIntensity" min="0.5" max="1.5" step="0.05" value="1" style="width:200px">
+          <span id="vizDisplay" class="volDisplay">1.0x</span>
+        </label>
+      </div>
     </div>
     <div class="footer">
       <button id="closeSettings" class="btn-accent">Close</button>
     </div>
   </div>
 </div>
+
+<!-- Statistics Modal -->
+<div id="statsOverlay" class="modalOverlay">
+  <div class="modal">
+    <h3>📊 Statistics Dashboard</h3>
+    <div class="statsGrid">
+      <div class="statCard">
+        <div class="statLabel">💰 Lifetime Coins Earned</div>
+        <div class="statValue" id="statLifetimeCoins">0</div>
+      </div>
+      <div class="statCard">
+        <div class="statLabel">🐟 Total Fish Sold</div>
+        <div class="statValue" id="statFishSold">0</div>
+      </div>
+      <div class="statCard">
+        <div class="statLabel">🛒 Total Fish Bought</div>
+        <div class="statValue" id="statFishBought">0</div>
+      </div>
+      <div class="statCard">
+        <div class="statLabel">🏆 Times Prestiged</div>
+        <div class="statValue" id="statPrestigeCount">0</div>
+      </div>
+      <div class="statCard">
+        <div class="statLabel">💎 Most Valuable Sale</div>
+        <div class="statValue" id="statBestSale">0</div>
+      </div>
+      <div class="statCard">
+        <div class="statLabel">⭐ Rarest Fish Found</div>
+        <div class="statValue" id="statRarestFish">COMMON</div>
+      </div>
+      <div class="statCard">
+        <div class="statLabel">⏱️ Total Play Time</div>
+        <div class="statValue" id="statPlayTime">0h 0m</div>
+      </div>
+      <div class="statCard">
+        <div class="statLabel">📈 Current Session</div>
+        <div class="statValue" id="statSessionTime">0m 0s</div>
+      </div>
+    </div>
+    <div class="footer">
+      <button id="closeStats" class="btn-accent">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Achievement Toast Container -->
+<div id="toastContainer" class="toastContainer"></div>
 
 <script src="game.js"></script>
 </body>

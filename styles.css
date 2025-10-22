@@ -1,6 +1,6 @@
 /* ===================================
-   Aquarium Tycoon v5.0.0 - Visual Overhaul
-   Complete UI redesign with enhanced aesthetics
+   Aquarium Tycoon v5.2.1 - Audio System Overhaul
+   Separate music/SFX volume controls, UI text improvements
    =================================== */
 
 :root {
@@ -325,47 +325,135 @@ input:focus {
   backdrop-filter: blur(10px);
 }
 
-.shop h3 {
-  margin: 0;
-  padding: 12px 14px;
-  border-bottom: 1px solid #1b2a47;
-  color: #bfe7ff;
-  letter-spacing: 0.4px;
-  font-size: 1.1em;
+/* ===== Shop Header ===== */
+.shopHeader {
+  background: linear-gradient(135deg, rgba(79, 195, 247, 0.15) 0%, rgba(26, 144, 255, 0.1) 100%);
+  border-bottom: 2px solid rgba(79, 195, 247, 0.3);
+  padding: 20px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
 }
 
-.tabs {
-  display: flex;
-  gap: 8px;
-  padding: 10px 12px;
-  border-bottom: 1px solid #1b2a47;
+.shopHeader::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(45deg,
+    transparent 30%,
+    rgba(255, 255, 255, 0.03) 50%,
+    transparent 70%
+  );
+  animation: shimmer 3s infinite;
 }
 
-.tab {
-  padding: 8px 10px;
-  border-radius: 10px;
-  background: #0b1527;
-  border: 1px solid #1c2a46;
-  cursor: pointer;
-  font-weight: 600;
-  color: #cfe7ff;
-  transition: var(--transition-smooth);
+@keyframes shimmer {
+  0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
+  100% { transform: translateX(100%) translateY(100%) rotate(45deg); }
 }
 
-.tab:hover {
-  background: #0f1f3a;
-  border-color: #2b5794;
+.shopTitle {
+  font-size: 1.8em;
+  font-weight: 800;
+  color: var(--accent-bright);
+  text-shadow: 0 2px 10px rgba(79, 195, 247, 0.5), 0 0 20px rgba(79, 195, 247, 0.3);
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+  position: relative;
+  z-index: 1;
 }
 
-.tab.active {
-  background: #143257;
-  border-color: #2b5794;
-  box-shadow: 0 2px 8px rgba(43, 87, 148, 0.3);
+.shopSubtitle {
+  font-size: 0.9em;
+  color: var(--text-secondary);
+  font-style: italic;
+  position: relative;
+  z-index: 1;
 }
 
-.list {
+/* ===== Accordion ===== */
+.accordion {
   flex: 1;
   overflow: auto;
+}
+
+.accordion::-webkit-scrollbar {
+  width: 10px;
+}
+
+.accordion::-webkit-scrollbar-thumb {
+  background: #1a2a47;
+  border-radius: 8px;
+}
+
+.accordion::-webkit-scrollbar-thumb:hover {
+  background: #2a3a57;
+}
+
+.accordion::-webkit-scrollbar-track {
+  background: #0c1628;
+}
+
+.accordionSection {
+  border-bottom: 1px solid #1a2946;
+}
+
+.accordionHeader {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  cursor: pointer;
+  background: linear-gradient(90deg, rgba(26, 38, 56, 0.4) 0%, rgba(15, 24, 40, 0.6) 100%);
+  transition: var(--transition-smooth);
+  user-select: none;
+}
+
+.accordionHeader:hover {
+  background: linear-gradient(90deg, rgba(79, 195, 247, 0.08) 0%, rgba(26, 144, 255, 0.05) 100%);
+}
+
+.accordionSection.active .accordionHeader {
+  background: linear-gradient(90deg, rgba(79, 195, 247, 0.15) 0%, rgba(26, 144, 255, 0.1) 100%);
+  border-bottom: 1px solid rgba(79, 195, 247, 0.3);
+}
+
+.accordionIcon {
+  font-size: 1.4em;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+}
+
+.accordionTitle {
+  flex: 1;
+  font-weight: 700;
+  font-size: 1.05em;
+  color: var(--text);
+  letter-spacing: 0.3px;
+}
+
+.accordionChevron {
+  font-size: 0.8em;
+  color: var(--muted);
+  transition: transform 0.3s ease;
+}
+
+.accordionSection.active .accordionChevron {
+  transform: rotate(180deg);
+  color: var(--accent);
+}
+
+.accordionContent {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease;
+  padding: 0 12px;
+}
+
+.accordionSection.active .accordionContent {
+  max-height: 2000px; /* Large enough for content */
   padding: 12px;
 }
 
@@ -487,6 +575,17 @@ canvas {
   display: block;
   width: 100%;
   height: 100%;
+}
+
+/* Coin particle overlay canvas - sits above all UI */
+#coinCanvas {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  z-index: 9999;
 }
 
 .overlay {
@@ -958,4 +1057,214 @@ canvas {
     font-size: 0.7em;
     display: none; /* Hide tips on very small screens */
   }
+}
+
+/* ===================================
+   Statistics Dashboard Styling
+   =================================== */
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 14px;
+  margin: 20px 0;
+}
+
+.statCard {
+  background: linear-gradient(135deg, rgba(26, 38, 56, 0.6) 0%, rgba(18, 26, 43, 0.8) 100%);
+  border: var(--border);
+  border-radius: var(--radius-sm);
+  padding: 16px;
+  box-shadow: var(--shadow-sm);
+  transition: var(--transition-smooth);
+}
+
+.statCard:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+  border-color: var(--accent);
+}
+
+.statLabel {
+  font-size: 0.85em;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+  font-weight: 500;
+}
+
+.statValue {
+  font-size: 1.8em;
+  font-weight: 700;
+  color: var(--gold-bright);
+  text-shadow: 0 0 10px rgba(255, 213, 79, 0.3);
+}
+
+@media (max-width: 768px) {
+  .statsGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ===================================
+   Achievement Toast Notifications
+   =================================== */
+.toastContainer {
+  position: fixed;
+  top: 80px;
+  right: 20px;
+  z-index: 10000;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-width: 350px;
+}
+
+.toast {
+  background: linear-gradient(135deg, rgba(79, 195, 247, 0.95) 0%, rgba(26, 144, 255, 0.95) 100%);
+  border: 2px solid var(--accent-bright);
+  border-radius: var(--radius);
+  padding: 16px 20px;
+  box-shadow: var(--shadow-lg), 0 0 30px rgba(79, 195, 247, 0.4);
+  pointer-events: all;
+  cursor: pointer;
+  backdrop-filter: blur(10px);
+  animation: slideInRight 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  position: relative;
+  overflow: hidden;
+}
+
+.toast::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--gold), var(--gold-bright));
+  animation: toastProgress 5s linear;
+}
+
+.toast.fadeOut {
+  animation: slideOutRight 0.3s ease-out forwards;
+}
+
+.toastIcon {
+  font-size: 2em;
+  margin-bottom: 6px;
+  display: block;
+  text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+}
+
+.toastTitle {
+  font-size: 1.1em;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 4px;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.toastDesc {
+  font-size: 0.9em;
+  color: rgba(255, 255, 255, 0.95);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+@keyframes slideInRight {
+  from {
+    transform: translateX(400px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideOutRight {
+  to {
+    transform: translateX(400px);
+    opacity: 0;
+  }
+}
+
+@keyframes toastProgress {
+  from {
+    transform: scaleX(1);
+    transform-origin: left;
+  }
+  to {
+    transform: scaleX(0);
+    transform-origin: left;
+  }
+}
+
+@media (max-width: 768px) {
+  .toastContainer {
+    right: 10px;
+    left: 10px;
+    max-width: none;
+  }
+}
+
+/* ===================================
+   Achievement Cards (in shop)
+   =================================== */
+.achievementCard {
+  background: linear-gradient(135deg, rgba(26, 38, 56, 0.7) 0%, rgba(18, 26, 43, 0.9) 100%);
+  border: var(--border);
+  border-radius: var(--radius-sm);
+  padding: 14px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  transition: var(--transition-smooth);
+  position: relative;
+  overflow: hidden;
+}
+
+.achievementCard.unlocked {
+  border-color: var(--accent);
+  box-shadow: var(--shadow-md), 0 0 20px rgba(79, 195, 247, 0.2);
+}
+
+.achievementCard.unlocked::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--accent), var(--accent-bright));
+}
+
+.achievementCard.locked {
+  opacity: 0.5;
+  filter: grayscale(0.7);
+}
+
+.achIcon {
+  font-size: 2.5em;
+  flex-shrink: 0;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+}
+
+.achContent {
+  flex: 1;
+}
+
+.achName {
+  font-size: 1.05em;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+
+.achDesc {
+  font-size: 0.85em;
+  color: var(--text-secondary);
+}
+
+.achLockIcon {
+  font-size: 1.5em;
+  opacity: 0.4;
 }
