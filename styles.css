@@ -1,6 +1,6 @@
 /* ===================================
-   Aquarium Tycoon v5.2.1 - Audio System Overhaul
-   Separate music/SFX volume controls, UI text improvements
+   Aquarium Tycoon v5.3.0 - Predator Auto-Sell System
+   Idle mechanic: 12 predators with 5 upgrade levels
    =================================== */
 
 :root {
@@ -453,7 +453,8 @@ input:focus {
 }
 
 .accordionSection.active .accordionContent {
-  max-height: 2000px; /* Large enough for content */
+  max-height: 600px; /* Limit height but allow scrolling */
+  overflow-y: auto; /* Enable vertical scrolling */
   padding: 12px;
 }
 

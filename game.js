@@ -10,7 +10,7 @@
    - ENHANCED BACKGROUNDS - Beautiful, immersive aquarium environments
    - PROCEDURAL MUSIC SYSTEM - Real melodic ambient music
    ========================================== */
-const GAME_VERSION = '5.2.1';
+const GAME_VERSION = '5.3.0';
 const PRESTIGE_BASE = 10_000_000; // starting prestige price
 const AUTOMATION_PASSWORD = 'HAX'; // Password for automation features
 const MAX_TANKS = 10; // Maximum number of parallel tanks
@@ -160,6 +160,33 @@ const species = [
   { id:'angler',  name:'Angler Fish',  cost:6000000,    sellBase:4800000,  growth: 0.0045 }
 ];
 
+/* ---- Predators (Auto-sell idle mechanic) ---- */
+// Each predator matches a fish species and auto-sells mature fish periodically
+// 5 levels with increasing frequency and cost
+const predators = [
+  { id:'bass',       name:'Bass',           prey:'guppy',   baseCost:    500,    icon:'🐟' },
+  { id:'catfish',    name:'Catfish',        prey:'gold',    baseCost:   5000,    icon:'😺' },
+  { id:'octopus',    name:'Octopus',        prey:'squid',   baseCost:  15000,    icon:'🐙' },
+  { id:'pike',       name:'Pike',           prey:'koi',     baseCost:  25000,    icon:'🦈' },
+  { id:'barracuda',  name:'Barracuda',      prey:'angel',   baseCost:  60000,    icon:'⚡' },
+  { id:'moray',      name:'Moray Eel',      prey:'discus',  baseCost: 200000,    icon:'🐍' },
+  { id:'sealion',    name:'Sea Lion',       prey:'eel',     baseCost: 400000,    icon:'🦭' },
+  { id:'seal',       name:'Seal',           prey:'turtle',  baseCost: 800000,    icon:'🦭' },
+  { id:'orca',       name:'Orca',           prey:'shark',   baseCost:3000000,    icon:'🐋' },
+  { id:'swordfish',  name:'Swordfish',      prey:'dolphin', baseCost:10000000,   icon:'🗡️' },
+  { id:'giantSquid', name:'Giant Squid',    prey:'oarfish', baseCost:35000000,   icon:'🦑' },
+  { id:'kraken',     name:'Kraken',         prey:'angler',  baseCost:120000000,  icon:'👾' }
+];
+
+// Predator level stats: interval (seconds) and cost multiplier
+const predatorLevels = [
+  { level: 1, interval: 11,  costMult: 1.0  }, // Sells 1 fish every 11 seconds
+  { level: 2, interval: 7.5, costMult: 3.0  }, // Every 7.5 seconds
+  { level: 3, interval: 5,   costMult: 9.0  }, // Every 5 seconds
+  { level: 4, interval: 3.75, costMult: 27.0 }, // Every 3.75 seconds
+  { level: 5, interval: 2.5, costMult: 81.0 }  // Every 2.5 seconds (max)
+];
+
 /* ---- Tank types & items ---- */
 const tankTypes = [
   { id:'starter', name:'Starter Glass', capacity:6,  growthBonus:1.00, cost:0,     bg:'#408bcb22' },
@@ -282,6 +309,16 @@ const achievements = [
   { id:'dedicated', name:'Dedicated Player', desc:'Play for 1 hour total', icon:'⏰', check:()=>(state.stats.totalPlayTime + (Date.now()-state.stats.sessionStart)) >= 3600000 },
   { id:'addicted', name:'Can\'t Stop Won\'t Stop', desc:'Play for 5 hours total', icon:'🎮', check:()=>(state.stats.totalPlayTime + (Date.now()-state.stats.sessionStart)) >= 18000000 },
 
+  // Predator achievements
+  { id:'first_predator', name:'Hire a Hitman', desc:'Purchase your first predator', icon:'🦈', check:()=>state.tanks.some(t=>t.predators && Object.values(t.predators).some(p=>p.level>=1)) },
+  { id:'apex_predator', name:'Apex Predator', desc:'Upgrade any predator to level 5', icon:'👹', check:()=>state.tanks.some(t=>t.predators && Object.values(t.predators).some(p=>p.level>=5)) },
+  { id:'predator_army', name:'Feeding Frenzy', desc:'Own 5 different predators in one tank', icon:'🔱', check:()=>state.tanks.some(t=>t.predators && Object.values(t.predators).filter(p=>p.level>=1).length>=5) },
+  { id:'predator_master', name:'Ocean\'s Twelve', desc:'Own all 12 predators in one tank', icon:'🌊', check:()=>state.tanks.some(t=>t.predators && Object.values(t.predators).filter(p=>p.level>=1).length>=12) },
+  { id:'lazy_farmer', name:'Passive Aggressive Income', desc:'Let predators earn 10,000 coins', icon:'😴', check:()=>state.stats.predatorEarnings >= 10_000 },
+  { id:'circle_of_life', name:'Circle of Life', desc:'Watch a predator hunt down its prey', icon:'🎯', check:()=>state.stats.predatorKills >= 1 },
+  { id:'serial_killer', name:'Serial Killer', desc:'Predators kill 100 fish', icon:'💀', check:()=>state.stats.predatorKills >= 100 },
+  { id:'fish_genocide', name:'Crimes Against Fishmanity', desc:'Predators kill 1,000 fish', icon:'⚰️', check:()=>state.stats.predatorKills >= 1000 },
+
   // Misc achievements
   { id:'automation_master', name:'Set It and Forget It', desc:'Enable automation', icon:'🤖', check:()=>{ const t=currentTank(); return t && (t.automation.autoSell || t.automation.autoBuy); }},
   { id:'speed_demon', name:'Gotta Go Fast', desc:'Sell 50 fish in one session', icon:'⚡', check:()=>state.stats.lifetimeFishSold >= 50 },
@@ -296,7 +333,7 @@ const state = {
   settings: { musicVolume:0, sfxVolume:0.75, intensity:1.0 }, // SFX on by default
   unlockedBackgrounds: { default: true }, // global unlocks
   automationUnlocked: false, // track automation unlock status
-  tanks: [], // { uid,typeId,name,items,fish,lastTick,automation,backgroundId }
+  tanks: [], // { uid,typeId,name,items,fish,lastTick,automation,backgroundId,predators }
   activeTankUid: null,
   nextUid: 1,
   // Statistics tracking (lifetime, persists through prestige)
@@ -308,7 +345,9 @@ const state = {
     totalPlayTime: 0,      // milliseconds played
     sessionStart: Date.now(), // track current session
     mostValuableSale: 0,   // highest single fish sale
-    rarestFish: 'COMMON'   // best rarity found
+    rarestFish: 'COMMON',  // best rarity found
+    predatorKills: 0,      // total fish killed by predators
+    predatorEarnings: 0    // total coins earned by predators
   },
   // Achievement tracking
   achievements: {}
@@ -470,8 +509,12 @@ function load(){
       state.stats = state.stats || {
         lifetimeCoins: 0, lifetimeFishSold: 0, lifetimeFishBought: 0,
         prestigeCount: 0, totalPlayTime: 0, sessionStart: Date.now(),
-        mostValuableSale: 0, rarestFish: 'COMMON'
+        mostValuableSale: 0, rarestFish: 'COMMON',
+        predatorKills: 0, predatorEarnings: 0
       };
+      // Add new predator stats if missing (backwards compatibility)
+      state.stats.predatorKills = state.stats.predatorKills || 0;
+      state.stats.predatorEarnings = state.stats.predatorEarnings || 0;
       state.stats.sessionStart = Date.now(); // reset session timer on load
       // Initialize achievements if missing
       state.achievements = state.achievements || {};
@@ -682,12 +725,46 @@ function addParallelTank(cost=2500){
     fish: [],
     lastTick: Date.now(),
     automation: { autoSell:false, autoBuy:false, mode:'smart', target:'guppy', reserve:0 },
-    backgroundId: 'default'
+    backgroundId: 'default',
+    predators: Object.fromEntries(predators.map(p=>[p.id, { level:0, lastHunt:Date.now() }])) // Predator levels & timers
   });
   state.activeTankUid = uid;
   log(`Added a new tank (Starter Glass) for ${fmt(cost)}.`);
   refreshStats(); refreshTankSelect(); renderShop(); applyTankBackground(); updateAmbientForActiveTank();
 }
+function upgradePredator(predId, targetLevel){
+  const t = currentTank(); if(!t) return;
+  if(!t.predators) t.predators = Object.fromEntries(predators.map(p=>[p.id, { level:0, lastHunt:Date.now() }]));
+
+  const pred = predators.find(p=>p.id===predId);
+  if(!pred) return;
+
+  const currentLevel = t.predators[predId]?.level || 0;
+
+  // Can only upgrade to next level
+  if(targetLevel !== currentLevel + 1){
+    log('You must upgrade predators one level at a time.');
+    return;
+  }
+
+  const levelData = predatorLevels[targetLevel - 1];
+  const cost = Math.floor(pred.baseCost * levelData.costMult);
+
+  if(state.coins < cost){
+    log(`Not enough coins for ${pred.name} Level ${targetLevel}.`);
+    return;
+  }
+
+  state.coins -= cost;
+  t.predators[predId].level = targetLevel;
+  t.predators[predId].lastHunt = Date.now();
+
+  playSFX('upgrade');
+  log(`${pred.name} upgraded to Level ${targetLevel}! Auto-sells ${species.find(s=>s.id===pred.prey).name} every ${levelData.interval}s.`);
+  refreshStats();
+  renderShop();
+}
+
 function upgradeTankType(tankUid, newTypeId){
   const t = state.tanks.find(x=>x.uid===tankUid); if(!t) return;
   const tt = getTankType(newTypeId); if(!tt) return;
@@ -783,17 +860,25 @@ function renderShop(){
   if(!contentEl) return;
 
   if(activeSection==='fish'){
+    const gMult = growthMultiplier(t);
     species.forEach(sp=>{
       const full = t.fish.length >= totalCapacity(t);
       const afford = coins>=sp.cost;
+
+      // Calculate time to mature (0% -> 80%)
+      const timeToMature = 0.8 / (sp.growth * gMult); // seconds
+      const formatTime = (secs) => {
+        if(secs < 60) return `${Math.ceil(secs)}s`;
+        if(secs < 3600) return `${Math.floor(secs/60)}m ${Math.ceil(secs%60)}s`;
+        return `${Math.floor(secs/3600)}h ${Math.floor((secs%3600)/60)}m`;
+      };
+
       const div = document.createElement('div'); div.className='card';
       div.innerHTML = `
         <div>
-          <div class="title">${sp.name} <span class="badge">${(sp.growth*100|0)}%/s growth</span></div>
+          <div class="title">${sp.name} <span class="badge">⏱️ ${formatTime(timeToMature)}</span></div>
           <div class="muted">Buy <span class="price">${fmt(sp.cost)}</span> • Mature base sell ~ <span class="price">${fmt(Math.floor(sp.sellBase*1.5*1.2))}</span></div>
-          <div class="tiny">Rarity: Rare 5% • Epic 1% • Legendary 0.2% &nbsp;
-            <span class="rarity r-RARE">Rare</span> <span class="rarity r-EPIC">Epic</span> <span class="rarity r-LEGENDARY">Legendary</span>
-          </div>
+          <div class="tiny">Time to mature with current ${gMult.toFixed(2)}× growth multiplier • Rarity: Rare 5% • Epic 1% • Legendary 0.2%</div>
         </div>
         <div><button ${(!afford||full)?'disabled':''}>Buy</button></div>`;
       const btn = div.querySelector('button');
@@ -1039,6 +1124,77 @@ function renderShop(){
           }
         }
       };
+      contentEl.appendChild(card);
+    });
+  }
+
+  if(activeSection==='predators'){
+    const t = currentTank();
+    if(!t) return;
+
+    // Ensure tank has predators field (for backwards compatibility)
+    if(!t.predators){
+      t.predators = Object.fromEntries(predators.map(p=>[p.id, { level:0, lastHunt:Date.now() }]));
+    }
+
+    const header = document.createElement('div');
+    header.className = 'tiny';
+    header.innerHTML = `<b>${t.name}</b> — Predators auto-sell mature prey fish at intervals`;
+    contentEl.appendChild(header);
+
+    predators.forEach(pred=>{
+      const currentLevel = t.predators[pred.id]?.level || 0;
+      const preySpecies = species.find(s=>s.id===pred.prey);
+
+      // Count mature prey fish
+      const maturePrey = t.fish.filter(f=>f.sp===pred.prey && f.size>=0.8).length;
+
+      const card = document.createElement('div');
+      card.className = 'card';
+
+      // Build level buttons HTML with prices
+      let levelButtonsHTML = '<div style="display:flex;gap:4px;margin-top:8px;flex-wrap:wrap;">';
+      for(let i=1; i<=5; i++){
+        const levelData = predatorLevels[i-1];
+        const cost = Math.floor(pred.baseCost * levelData.costMult);
+        const isCurrentLevel = currentLevel === i;
+        const canAfford = state.coins >= cost;
+        const isLocked = i > currentLevel + 1; // Can only buy next level
+        const isOwned = i <= currentLevel;
+
+        let buttonClass = 'tiny';
+        if(isOwned) buttonClass += ' owned';
+        else if(isLocked) buttonClass += ' locked';
+        else if(!canAfford) buttonClass += ' cant-afford';
+
+        const priceText = isOwned ? '✓' : (isLocked ? '🔒' : fmt(cost));
+        const tooltipText = isOwned ? 'Owned' : (isLocked ? 'Unlock previous levels first' : `${fmt(cost)} coins - Auto-sells every ${levelData.interval}s`);
+
+        levelButtonsHTML += `<button class="${buttonClass}" data-pred="${pred.id}" data-level="${i}" ${(isLocked || isOwned)?'disabled':''} title="${tooltipText}">
+          Lv${i}<br><span style="font-size:0.8em;opacity:0.9">${priceText}</span>
+        </button>`;
+      }
+      levelButtonsHTML += '</div>';
+
+      const intervalText = currentLevel > 0 ? `Every ${predatorLevels[currentLevel-1].interval}s` : 'Inactive';
+
+      card.innerHTML = `
+        <div>
+          <div class="title">${pred.icon} ${pred.name} <span class="badge">Lv ${currentLevel}/5</span></div>
+          <div class="muted">Hunts <b>${preySpecies.name}</b> • ${intervalText} • Prey available: <b>${maturePrey}</b></div>
+          ${levelButtonsHTML}
+        </div>
+      `;
+
+      // Attach event listeners to level buttons
+      card.querySelectorAll('button[data-pred]').forEach(btn=>{
+        btn.onclick = ()=>{
+          const predId = btn.getAttribute('data-pred');
+          const level = parseInt(btn.getAttribute('data-level'));
+          upgradePredator(predId, level);
+        };
+      });
+
       contentEl.appendChild(card);
     });
   }
@@ -1758,6 +1914,39 @@ function renderSprite(f){
   }
   ctx.restore();
 }
+
+/* ---- Render Predator ---- */
+function renderPredator(pred, predData){
+  ctx.save();
+  ctx.translate(predData.x, predData.y);
+  ctx.scale(predData.dir, 1);
+
+  // Predators are larger than regular fish
+  const size = 60 + (predData.level * 10); // Size increases with level
+
+  // Draw predator icon with glow effect
+  ctx.shadowColor = 'rgba(255, 100, 100, 0.6)';
+  ctx.shadowBlur = 20;
+
+  ctx.font = `${size}px Arial`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(pred.icon, 0, 0);
+
+  // Add level badge (counter-flip the text so it's always readable)
+  ctx.scale(predData.dir, 1); // Counter the parent flip
+  ctx.shadowBlur = 0;
+  ctx.font = '12px Arial';
+  ctx.fillStyle = '#ffffff';
+  ctx.strokeStyle = '#000000';
+  ctx.lineWidth = 3;
+  const badgeText = `Lv${predData.level}`;
+  ctx.strokeText(badgeText, 0, size/2 + 8);
+  ctx.fillText(badgeText, 0, size/2 + 8);
+
+  ctx.restore();
+}
+
 /* ---- Background: base (per-tank) ---- */
 // Stable background decorations (generated once per background type)
 // Store as percentages (0-1) instead of absolute positions
@@ -2722,7 +2911,30 @@ function tick(){
   drawBackgroundEffects();
   drawEquipment();
 
-  const t=currentTank(); if(t) for(const f of t.fish) renderSprite(f);
+  const t=currentTank();
+  if(t){
+    // Draw prey fish
+    for(const f of t.fish) renderSprite(f);
+
+    // Draw predators
+    if(t.predators){
+      predators.forEach(pred=>{
+        const predData = t.predators[pred.id];
+        if(predData && predData.level > 0){
+          // Initialize predator position if not exist
+          if(!predData.x){
+            predData.x = rnd(100, viewW - 100);
+            predData.y = rnd(100, viewH - 150);
+            predData.vx = rnd(20, 40) * (Math.random() < 0.5 ? 1 : -1);
+            predData.vy = rnd(-15, 15);
+            predData.dir = predData.vx > 0 ? 1 : -1;
+            predData.wobble = Math.random() * Math.PI * 2;
+          }
+          renderPredator(pred, predData);
+        }
+      });
+    }
+  }
 
   drawForeground();
   drawCoinParticles(); // Draw coin particles on top of everything
@@ -2744,6 +2956,128 @@ function simulateAll(dt){
       if(Math.random()<0.01) f.vy += rnd(-10,10);
       f.vx = clamp(f.vx,-60,60); f.vy = clamp(f.vy,-40,40); f.dir = f.vx>=0?1:-1;
     }
+
+    // Simulate predator movement and hunting
+    if(t.predators){
+      predators.forEach(pred=>{
+        const p = t.predators[pred.id];
+        if(p && p.level > 0 && p.x !== undefined){
+
+          if(p.hunting && p.targetFish){
+            // Check if target fish still exists in the tank AND is still mature
+            const stillExists = t.fish.find(f => f.id === p.targetFish.id);
+
+            if(!stillExists || stillExists.size < 0.8){
+              // Target was killed by player or is no longer mature - find a new target
+              const newPreyIndex = t.fish.findIndex(f=>f.sp===pred.prey && f.size>=0.8);
+              if(newPreyIndex !== -1){
+                // Found new prey, switch target
+                p.targetFish = t.fish[newPreyIndex];
+                p.targetIndex = newPreyIndex;
+              } else {
+                // No more prey available, stop hunting
+                p.hunting = false;
+                p.targetFish = null;
+                p.targetIndex = null;
+                p.lastHunt = Date.now();
+              }
+              return; // Skip this frame
+            }
+
+            // Hunting behavior - chase the target fish
+            const target = p.targetFish;
+            const dx = target.x - p.x;
+            const dy = target.y - p.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+
+            // Check if close enough to catch (within 40 pixels)
+            if(distance < 40){
+              // Double-check fish still exists AND is mature before killing
+              const finalCheck = t.fish.findIndex(f => f.id === target.id);
+              const fishToKill = t.fish[finalCheck];
+              if(finalCheck === -1 || !fishToKill || fishToKill.size < 0.8){
+                // Fish disappeared or is not mature, abort
+                p.hunting = false;
+                p.targetFish = null;
+                p.targetIndex = null;
+                return;
+              }
+
+              // Kill the fish!
+              const sp = species.find(s=>s.id===target.sp);
+              const rar = RARITIES.find(r=>r.key===target.rarity) || RARITIES[0];
+              const value = Math.floor(fishValue(t, sp, target.size, rar));
+
+              // Remove the fish
+              t.fish.splice(finalCheck, 1);
+              state.coins += value;
+              state.stats.lifetimeCoins += value;
+              state.stats.lifetimeFishSold++;
+
+              // Track predator stats
+              state.stats.predatorKills = (state.stats.predatorKills || 0) + 1;
+              state.stats.predatorEarnings = (state.stats.predatorEarnings || 0) + value;
+
+              // Play sound effect
+              playSFX('sellFish');
+
+              // Check achievements
+              checkAchievements();
+
+              // Log and update UI
+              if(t.uid === state.activeTankUid){
+                // Spawn coin particles at kill location for active tank
+                spawnCoinParticles(target.x, target.y, value);
+                log(`${pred.icon} ${pred.name} hunted a ${sp.name} for ${fmt(value)}.`);
+                refreshStats();
+                renderShop();
+              } else {
+                // Spawn coins from tank selector for non-active tanks
+                const tankSelectEl = document.getElementById('tankSelect');
+                const rect = tankSelectEl.getBoundingClientRect();
+                spawnCoinParticles(rect.left + rect.width/2 - canvas.getBoundingClientRect().left,
+                                   rect.top + rect.height - canvas.getBoundingClientRect().top,
+                                   value);
+              }
+
+              // Reset hunting state
+              p.hunting = false;
+              p.targetFish = null;
+              p.targetIndex = null;
+              p.lastHunt = Date.now();
+            } else {
+              // Chase the target - move MUCH faster when hunting
+              const speed = 300; // Very fast hunting speed!
+              p.vx = (dx / distance) * speed;
+              p.vy = (dy / distance) * speed;
+              p.x += p.vx * dt;
+              p.y += p.vy * dt;
+              p.dir = p.vx >= 0 ? 1 : -1;
+            }
+          } else {
+            // Normal patrol behavior
+            p.wobble = (p.wobble || 0) + dt * 1.5;
+            p.vy += Math.sin(p.wobble) * 1.5 * dt;
+            p.x += p.vx * dt;
+            p.y += p.vy * dt;
+
+            // Boundary checks
+            if(p.x < 70){ p.x = 70; p.vx = Math.abs(p.vx); p.dir = 1; }
+            if(p.x > viewW - 70){ p.x = viewW - 70; p.vx = -Math.abs(p.vx); p.dir = -1; }
+            if(p.y < 80){ p.y = 80; p.vy += 8 * dt; }
+            if(p.y > viewH - 160){ p.y = viewH - 160; p.vy -= 8 * dt; }
+
+            // Random direction changes (less frequent than fish)
+            if(Math.random() < 0.005) p.vx += rnd(-8, 8);
+            if(Math.random() < 0.005) p.vy += rnd(-8, 8);
+
+            p.vx = clamp(p.vx, -50, 50);
+            p.vy = clamp(p.vy, -30, 30);
+            p.dir = p.vx >= 0 ? 1 : -1;
+          }
+        }
+      });
+    }
   }
 
   // Automations every 0.5s
@@ -2764,7 +3098,21 @@ function runAutomations(){
           t.fish.splice(i,1); sold++;
         }
       }
-      if(sold){ state.coins += coins; if(t.uid===state.activeTankUid){ refreshStats(); renderShop(); } log(`${t.name}: Auto-sold ${sold} mature fish for ${fmt(coins)}.`); }
+      if(sold){
+        state.coins += coins;
+        if(t.uid===state.activeTankUid){
+          refreshStats();
+          renderShop();
+        } else {
+          // Spawn coins from tank selector for non-active tanks
+          const tankSelectEl = document.getElementById('tankSelect');
+          const rect = tankSelectEl.getBoundingClientRect();
+          spawnCoinParticles(rect.left + rect.width/2 - canvas.getBoundingClientRect().left,
+                             rect.top + rect.height - canvas.getBoundingClientRect().top,
+                             coins);
+        }
+        log(`${t.name}: Auto-sold ${sold} mature fish for ${fmt(coins)}.`);
+      }
     }
 
     if(a.autoBuy){
@@ -2806,6 +3154,34 @@ function runAutomations(){
         if(bought > 60) break;
       }
       if(bought){ if(t.uid===state.activeTankUid){ refreshStats(); renderShop(); } log(`${t.name}: Auto-bought ${bought} fish${a.mode==='smart'?' (smart)':''}.`); }
+    }
+
+    // Predator automation - initiate hunt for mature prey fish
+    if(t.predators){
+      const now = Date.now();
+      predators.forEach(pred=>{
+        const predData = t.predators[pred.id];
+        if(!predData || predData.level === 0) return; // Skip inactive predators
+
+        // Skip if already hunting
+        if(predData.hunting) return;
+
+        const levelData = predatorLevels[predData.level - 1];
+        const intervalMs = levelData.interval * 1000;
+
+        // Check if enough time has passed
+        if(now - predData.lastHunt < intervalMs) return;
+
+        // Find mature prey fish
+        const preyIndex = t.fish.findIndex(f=>f.sp===pred.prey && f.size>=0.8);
+        if(preyIndex === -1) return; // No mature prey available
+
+        // Start hunting animation
+        const targetFish = t.fish[preyIndex];
+        predData.hunting = true;
+        predData.targetFish = targetFish;
+        predData.targetIndex = preyIndex;
+      });
     }
   }
 }

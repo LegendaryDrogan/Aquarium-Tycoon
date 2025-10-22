@@ -2,7 +2,7 @@
 
 An incremental browser game where you manage aquarium tanks, grow fish, and build your aquatic empire!
 
-![Version](https://img.shields.io/badge/version-5.2.1-blue)
+![Version](https://img.shields.io/badge/version-5.3.0-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![HTML5](https://img.shields.io/badge/HTML5-Canvas-orange)
 
@@ -13,6 +13,7 @@ An incremental browser game where you manage aquarium tanks, grow fish, and buil
 - 🎵 **Procedural Music** - Actual melodic compositions, not static noise!
 - 🏆 **Prestige System** - Permanent growth bonuses for replayability
 - 🤖 **Smart Automation** - Auto-buy and auto-sell with intelligent algorithms
+- 🦈 **Predator System** - 12 predators that hunt and auto-sell mature fish with animated chasing
 - 🎭 **Rarity System** - Rare, Epic, and Legendary fish with glowing effects
 - 🖥️ **Multiple Tanks** - Run parallel tanks that simulate simultaneously
 - 💾 **Auto-Save** - Never lose your progress
@@ -62,13 +63,13 @@ Then open http://localhost:8000 and start editing!
 
 ```
 Aquarium-Tycoon/
-├── index.html              # Game structure (90 lines)
-├── styles.css              # All styling and animations (500+ lines)
-├── game.js                 # Game logic and mechanics (1,660+ lines)
+├── index.html              # Game structure (~200 lines)
+├── styles.css              # All styling and animations (~1200 lines)
+├── game.js                 # Game logic and mechanics (~3400 lines)
+├── assets/fish/            # PNG sprite images for all fish species
 ├── Dockerfile              # Docker configuration
 ├── docker-compose.yml      # Docker Compose setup
-├── DEVELOPER-GUIDE.md      # Complete development documentation
-├── QUICK-EDITS.md          # Common customization examples
+├── CLAUDE.md               # AI development guide and workflow instructions
 └── README.md               # This file
 ```
 
@@ -146,7 +147,8 @@ Procedural music generation:
 4. **Upgrade tanks** for more capacity and faster growth
 5. **Unlock backgrounds** for visual variety
 6. **Prestige** to permanently boost growth speed
-7. **Automate** with smart buying and selling
+7. **Automate** with smart buying, selling, and predators
+8. **Deploy predators** to hunt and auto-sell mature fish while you're idle
 
 ### Controls
 
@@ -191,7 +193,19 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 📊 Version History
 
-### v5.2.1 (Current) - Audio System Overhaul
+### v5.3.0 (Current) - Predator System & Idle Automation
+- **Predator Auto-Sell System** - 12 unique predators that hunt and auto-sell mature fish
+- **Animated Hunting** - Predators chase prey at 300 speed with smooth hunting animations
+- **5 Upgrade Levels** - Each predator has 5 levels with faster hunting intervals (11s to 2.5s)
+- **Visual Feedback** - Predators swim in tank with red glow effects and level badges that stay readable
+- **Smart Targeting** - Predators only hunt mature fish (≥80% grown) with robust validation
+- **8 New Achievements** - Funny predator-themed achievements like "Hire a Hitman" and "Crimes Against Fishmanity"
+- **Predator Stats Tracking** - Track total predator kills and earnings in statistics dashboard
+- **Time-to-Mature Display** - Fish Market shows exact maturation time based on growth multiplier
+- **Non-Active Tank Earnings** - Coin animations spawn from tank selector for background tank earnings
+- **Bug Fixes** - Fixed coin animation duplication, predator targeting validation, shop scrolling, and mature fish validation
+
+### v5.2.1 - Audio System Overhaul
 - **Separate Audio Controls** - Independent volume sliders for background music and sound effects
 - **Smart Audio Initialization** - SFX enabled by default at 75%, music off by default
 - **Splash Sound Effect** - New water splash sound when fish drop into the tank
@@ -207,7 +221,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ### v5.1.0 - Statistics & Achievements
 - **Statistics Dashboard** - Lifetime tracking for coins, fish, sales, and playtime
-- **Achievement System** - 38 funny achievements with toast notifications
+- **Achievement System** - 46 funny achievements with toast notifications (including predator achievements!)
 - **Synthesized Sound Effects** - 8 different Web Audio API sounds for all game events
 - **Enhanced Progression** - Track your aquarium empire's growth over time
 

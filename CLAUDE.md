@@ -4,15 +4,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is **Aquarium Tycoon** (v5.2.1), an incremental browser game built with vanilla JavaScript and HTML5 Canvas. This version features an overhauled audio system with separate music/SFX controls, splash sound effects, coin particles that overlay UI, and various UX improvements. The game includes detailed fish sprites, enhanced backgrounds, achievements, statistics tracking, and a modern UI design.
+This is **Aquarium Tycoon** (v5.3.0), an incremental browser game built with vanilla JavaScript and HTML5 Canvas. This version features a complete predator auto-sell system with 12 unique predators, animated hunting, 5 upgrade levels per predator, time-to-mature displays, and visual feedback for non-active tank earnings. The game includes detailed fish sprites, enhanced backgrounds, achievements, statistics tracking, and a modern UI design.
 
 ## Architecture
 
 ### Modular Structure
 The project is split into separate files:
-1. **index.html** (~192 lines): HTML structure with topbar, accordion shop, tank canvas, modals, and coin overlay
+1. **index.html** (~200 lines): HTML structure with topbar, accordion shop (Fish/Tanks/Items/Predators/Backgrounds/Achievements), tank canvas, modals, and coin overlay
 2. **styles.css** (~1200 lines): Complete styling using CSS custom properties for theming
-3. **game.js** (~3300 lines): All game mechanics, rendering, audio, achievements, and state management
+3. **game.js** (~3400 lines): All game mechanics, rendering, audio, achievements, predator system, and state management
 4. **assets/fish/**: PNG sprite images for all 12 fish species
 
 ### Core Game Systems
@@ -25,7 +25,7 @@ The project is split into separate files:
   - `unlockedBackgrounds`: Global background purchases
   - `settings`: { musicVolume, sfxVolume, intensity }
   - `stats`: Lifetime tracking (coins, fish sold/bought, playtime, etc.)
-  - `achievements`: 38 achievements with unlock tracking
+  - `achievements`: 46 achievements with unlock tracking (including 8 predator achievements)
 - Save/load uses localStorage key `'aquariumSave_v2'` with migration from v1 format
 
 **Tank System (lines ~542-570)**
@@ -35,6 +35,7 @@ Each tank is an independent instance with:
 - `fish[]`: Array of fish entities with growth simulation
 - `items`: Per-tank upgrade levels (feeder, filter, heater, coral)
 - `automation`: Auto-sell/auto-buy settings with smart mode or target species
+- `predators`: Per-tank predator levels and hunt timers (new in v5.3.0)
 - `backgroundId`: Visual theme for this tank
 - `lastTick`: Used for offline progression calculation
 
@@ -84,9 +85,30 @@ Each tank is an independent instance with:
 
 **Shop System (v5.2.0)**
 - **Accordion UI**: Collapsible sections instead of tabs
-- **5 Sections**: Fish Market, Tank Management, Equipment & Items, Backgrounds, Achievements
+- **6 Sections**: Fish Market, Tank Management, Equipment & Items, Predators, Backgrounds, Achievements
 - **Shimmer Header**: Animated gradient effect on shop title
 - **Tank Cap**: Maximum 10 parallel tanks with "Max Reached" badge
+- **Scrollable Sections**: Shop sections have max-height with overflow scrolling
+
+**Predator System (v5.3.0 - lines ~163-188, ~2944-3033, ~3136-3162)**
+- **12 Unique Predators**: Each matches a fish species (Bass hunts Guppies, Catfish hunts Goldfish, etc.)
+- **5 Upgrade Levels**: Per predator with decreasing hunt intervals (11s, 7.5s, 5s, 3.75s, 2.5s)
+- **Exponential Costs**: Level multipliers of 1x, 3x, 9x, 27x, 81x base cost
+- **State Machine**: Predators toggle between `hunting` and `patrol` states
+- **Animated Hunting**: Predators chase target fish at 300 speed (6x patrol speed of 50)
+- **Visual Feedback**:
+  - Red glow effect on predators (shadowBlur: 20, shadowColor: red)
+  - Level badges that counter-scale to stay readable when predator flips
+  - Size scales by level (60px + 10px per level)
+- **Smart Targeting**:
+  - Only targets mature fish (size >= 0.8)
+  - Validates target still exists and is mature before chasing
+  - Finds new target if current one is killed by player
+  - Aborts kill if fish becomes immature or disappears
+- **Per-Tank State**: Each tank tracks predator levels and lastHunt timestamps
+- **Coin Animations**:
+  - Active tank: Coins spawn at kill location
+  - Non-active tanks: Coins spawn from tank selector dropdown
 
 **Automation (lines ~710-755)**
 - Per-tank auto-sell: Sells fish at ≥80% maturity
@@ -161,6 +183,13 @@ When starting a new coding session with Claude Code, follow this workflow:
 2. Create sprite using `generate_enhanced_sprites.py` or manually
 3. Save sprite as `assets/fish/{species_id}.png`
 4. Add to sprite preloading in `preloadSprites()` (~line 67)
+5. Add matching predator to `predators[]` array (~line 163)
+
+**Adding New Predators**
+1. Add to `predators[]` array in game.js (~line 163) with prey species ID
+2. Choose emoji icon for visual representation
+3. Set base cost (scales exponentially with level)
+4. Predator will automatically render and hunt in tank when purchased
 
 **Creating New Backgrounds**
 1. Add to `backgrounds[]` array (~line 20)
