@@ -146,7 +146,7 @@ const backgrounds = [
 
 /* ---- Species (ordered) ---- */
 const species = [
-  { id:'guppy',   name:'Guppy',        cost:   10,      sellBase:     8,   growth: 0.020 },
+  { id:'guppy',   name:'Guppy',        cost:   10,      sellBase:    25,   growth: 0.020 },
   { id:'gold',    name:'Goldfish',     cost:  200,      sellBase:   160,   growth: 0.016 },
   { id:'squid',   name:'Squid',        cost:  600,      sellBase:   480,   growth: 0.015 },
   { id:'koi',     name:'Koi',          cost:  900,      sellBase:   720,   growth: 0.013 },
