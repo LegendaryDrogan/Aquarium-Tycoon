@@ -217,11 +217,18 @@ function preloadSprites() {
       if (loadedCount === spriteNames.length) {
         spritesLoaded = true;
         console.log('✅ All fish sprites loaded successfully!');
+        // Start the game loop once all sprites are loaded
+        startGameLoop();
       }
     };
     img.onerror = () => {
       console.error(`❌ Failed to load sprite: ${name}.png`);
       loadedCount++;
+      if (loadedCount === spriteNames.length) {
+        spritesLoaded = true; // Mark as loaded even with errors to prevent infinite wait
+        console.warn('⚠️ Some sprites failed to load, but starting game anyway');
+        startGameLoop();
+      }
     };
     img.src = `assets/fish/${name}.png`;
     fishSprites[name] = img;
@@ -3699,14 +3706,28 @@ function applyTankBackground(){
     linear-gradient(180deg, rgba(20,34,60,.65), rgba(10,18,35,.95))
   `;
 }
+
+// Start the game loop (called after sprites are loaded)
+function startGameLoop(){
+  requestAnimationFrame(()=>{ lastFrame=Date.now(); tick(); });
+}
+
 function init(){
-  preloadSprites(); // Load PNG sprites
   load(); ensureActive();
   resize(); refreshTankSelect(); applyTankBackground(); refreshStats(); renderShop();
   makePlants();
   syncSettingsUIFromState();
   if(state.settings.musicVolume > 0){ if(initAudio()){ audio.enabled=true; audio.ctx.resume(); updateAmbientForActiveTank(); } }
   applyOfflineProgressAll();
-  requestAnimationFrame(()=>{ lastFrame=Date.now(); tick(); });
+
+  // Render initial frame with background before sprites load
+  ctx.clearRect(0,0,viewW,viewH);
+  drawBackgroundBase();
+  drawPlantLayer(plantsBack, Date.now()*0.001);
+  drawBackgroundEffects();
+  drawEquipment();
+  drawForeground();
+
+  preloadSprites(); // Load PNG sprites (will call startGameLoop when ready)
 }
 window.addEventListener('load', init);
