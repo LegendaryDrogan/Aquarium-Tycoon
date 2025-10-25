@@ -146,36 +146,36 @@ const backgrounds = [
 
 /* ---- Species (ordered) ---- */
 const species = [
-  { id:'guppy',   name:'Guppy',        cost:   10,      sellBase:    25,   growth: 0.020 },
-  { id:'gold',    name:'Goldfish',     cost:  200,      sellBase:   160,   growth: 0.016 },
-  { id:'squid',   name:'Squid',        cost:  600,      sellBase:   480,   growth: 0.015 },
-  { id:'koi',     name:'Koi',          cost:  900,      sellBase:   720,   growth: 0.013 },
-  { id:'angel',   name:'Angelfish',    cost: 2200,      sellBase:  1760,   growth: 0.011 },
-  { id:'discus',  name:'Discus',       cost: 8000,      sellBase:  6400,   growth: 0.009 },
-  { id:'eel',     name:'Eel',          cost: 15000,     sellBase: 12000,   growth: 0.008 },
-  { id:'turtle',  name:'Turtle',       cost: 30000,     sellBase: 24000,   growth: 0.007 },
-  { id:'shark',   name:'Shark',        cost:120000,     sellBase: 96000,   growth: 0.006 },
-  { id:'dolphin', name:'Dolphin',      cost:450000,     sellBase:360000,   growth: 0.0055 },
-  { id:'oarfish', name:'Oarfish',      cost:1500000,    sellBase:1200000,  growth: 0.005 },
-  { id:'angler',  name:'Angler Fish',  cost:6000000,    sellBase:4800000,  growth: 0.0045 }
+  { id:'sardine',    name:'Sardine',         cost:   10,      sellBase:    25,   growth: 0.020 },
+  { id:'sandlance',  name:'Sandlance',       cost:  200,      sellBase:   160,   growth: 0.016 },
+  { id:'herring',    name:'Herring',         cost:  600,      sellBase:   480,   growth: 0.015 },
+  { id:'butterfly',  name:'Butterflyfish',   cost:  900,      sellBase:   720,   growth: 0.013 },
+  { id:'parrot',     name:'Parrotfish',      cost: 2200,      sellBase:  1760,   growth: 0.011 },
+  { id:'croaker',    name:'Gulf Croaker',    cost: 8000,      sellBase:  6400,   growth: 0.009 },
+  { id:'grunt',      name:'Striped Grunt',   cost: 15000,     sellBase: 12000,   growth: 0.008 },
+  { id:'jellyfish',  name:'Jellyfish',       cost: 30000,     sellBase: 24000,   growth: 0.007 },
+  { id:'squid',      name:'Reef Squid',      cost:120000,     sellBase: 96000,   growth: 0.006 },
+  { id:'turtle',     name:'Sea Turtle',      cost:450000,     sellBase:360000,   growth: 0.0055 },
+  { id:'dolphin',    name:'Dolphin',         cost:1500000,    sellBase:1200000,  growth: 0.005 },
+  { id:'shark',      name:'Thresher Shark',  cost:6000000,    sellBase:4800000,  growth: 0.0045 }
 ];
 
 /* ---- Predators (Auto-sell idle mechanic) ---- */
 // Each predator matches a fish species and auto-sells mature fish periodically
 // 5 levels with increasing frequency and cost
 const predators = [
-  { id:'bass',       name:'Bass',           prey:'guppy',   baseCost:    500,    icon:'🐟' },
-  { id:'catfish',    name:'Catfish',        prey:'gold',    baseCost:   5000,    icon:'😺' },
-  { id:'octopus',    name:'Octopus',        prey:'squid',   baseCost:  15000,    icon:'🐙' },
-  { id:'pike',       name:'Pike',           prey:'koi',     baseCost:  25000,    icon:'🦈' },
-  { id:'barracuda',  name:'Barracuda',      prey:'angel',   baseCost:  60000,    icon:'⚡' },
-  { id:'moray',      name:'Moray Eel',      prey:'discus',  baseCost: 200000,    icon:'🐍' },
-  { id:'sealion',    name:'Sea Lion',       prey:'eel',     baseCost: 400000,    icon:'🦭' },
-  { id:'seal',       name:'Seal',           prey:'turtle',  baseCost: 800000,    icon:'🦭' },
-  { id:'orca',       name:'Orca',           prey:'shark',   baseCost:3000000,    icon:'🐋' },
-  { id:'swordfish',  name:'Swordfish',      prey:'dolphin', baseCost:10000000,   icon:'🗡️' },
-  { id:'giantSquid', name:'Giant Squid',    prey:'oarfish', baseCost:35000000,   icon:'🦑' },
-  { id:'kraken',     name:'Kraken',         prey:'angler',  baseCost:120000000,  icon:'👾' }
+  { id:'mackerel',   name:'Mackerel',       prey:'sardine',    baseCost:    500,    icon:'🐟' },
+  { id:'bass',       name:'Bass',           prey:'sandlance',  baseCost:   5000,    icon:'🐟' },
+  { id:'tuna',       name:'Tuna',           prey:'herring',    baseCost:  15000,    icon:'🐟' },
+  { id:'grouper',    name:'Grouper',        prey:'butterfly',  baseCost:  25000,    icon:'🐟' },
+  { id:'barracuda',  name:'Barracuda',      prey:'parrot',     baseCost:  60000,    icon:'⚡' },
+  { id:'moray',      name:'Moray Eel',      prey:'croaker',    baseCost: 200000,    icon:'🐍' },
+  { id:'octopus',    name:'Octopus',        prey:'grunt',      baseCost: 400000,    icon:'🐙' },
+  { id:'seal',       name:'Seal',           prey:'jellyfish',  baseCost: 800000,    icon:'🦭' },
+  { id:'sealion',    name:'Sea Lion',       prey:'squid',      baseCost:3000000,    icon:'🦭' },
+  { id:'orca',       name:'Orca',           prey:'turtle',     baseCost:10000000,   icon:'🐋' },
+  { id:'greatwhite', name:'Great White',    prey:'dolphin',    baseCost:35000000,   icon:'🦈' },
+  { id:'megalodon',  name:'Megalodon',      prey:'shark',      baseCost:120000000,  icon:'🦈' }
 ];
 
 // Predator level stats: interval (seconds) and cost multiplier
@@ -206,8 +206,8 @@ const fishSprites = {};
 let spritesLoaded = false;
 
 function preloadSprites() {
-  const spriteNames = ['guppy', 'gold', 'squid', 'koi', 'angel', 'discus',
-                       'eel', 'turtle', 'shark', 'dolphin', 'oarfish', 'angler'];
+  const spriteNames = ['sardine', 'sandlance', 'herring', 'butterfly', 'parrot', 'croaker',
+                       'grunt', 'jellyfish', 'squid', 'turtle', 'dolphin', 'shark'];
   let loadedCount = 0;
 
   spriteNames.forEach(name => {
@@ -237,18 +237,18 @@ function preloadSprites() {
 
 /* ---- Visual palette (base colors per species) ---- */
 const speciesStyle = {
-  guppy:   { top:'#64c8ff', belly:'#e6f6ff', fin:'#f6a9ff' },
-  gold:    { top:'#ffae3a', belly:'#fff1c9', fin:'#ffd36a' },
-  squid:   { top:'#c0d2ff', belly:'#eaf0ff', fin:'#d7e0ff' },
-  koi:     { top:'#ffffff', belly:'#f7f7f7', fin:'#ffd6d6' },
-  angel:   { top:'#b9aaff', belly:'#e9e4ff', fin:'#d6cdff' },
-  discus:  { top:'#6ad0af', belly:'#c8ffef', fin:'#aef7de' },
-  eel:     { top:'#7ac7a5', belly:'#ccf4e3', fin:'#a6e3c9' },
-  turtle:  { top:'#7e8c6a', belly:'#e6f0c8', fin:'#b2c493' },
-  shark:   { top:'#9fb3c7', belly:'#e4f1ff', fin:'#bfd0e0' },
-  dolphin: { top:'#8ec1ff', belly:'#e6f4ff', fin:'#b9dcff' },
-  oarfish: { top:'#cde8ff', belly:'#f4fbff', fin:'#f06a6a' },
-  angler:  { top:'#cda86a', belly:'#ffe7c0', fin:'#ffd38f' }
+  sardine:    { top:'#9090c0', belly:'#d0d0e8', fin:'#b0b0d8' },
+  sandlance:  { top:'#b8d8b0', belly:'#e0f0d8', fin:'#c8e8c0' },
+  herring:    { top:'#8080b8', belly:'#c0c0e0', fin:'#a0a0d0' },
+  butterfly:  { top:'#d8a0d0', belly:'#f0d0e8', fin:'#e8c0e0' },
+  parrot:     { top:'#70c0e0', belly:'#b0e0f0', fin:'#90d0e8' },
+  croaker:    { top:'#f0d070', belly:'#fff0b0', fin:'#f8e090' },
+  grunt:      { top:'#f0c870', belly:'#ffe8b0', fin:'#f8d890' },
+  jellyfish:  { top:'#a0d8d8', belly:'#d0f0f0', fin:'#c0e8e8' },
+  squid:      { top:'#e0d070', belly:'#f8f0a0', fin:'#f0e080' },
+  turtle:     { top:'#806050', belly:'#c0a090', fin:'#a08070' },
+  dolphin:    { top:'#6090c0', belly:'#a0c0e0', fin:'#80b0d0' },
+  shark:      { top:'#7090a8', belly:'#b0c8d8', fin:'#90b0c8' }
 };
 
 /* ---- Rarities ---- */
@@ -270,12 +270,12 @@ const achievements = [
   { id:'first_upgrade', name:'Level Up!', desc:'Upgrade any item to level 1', icon:'⬆️', check:()=>{ const t=currentTank(); return t && Object.values(t.items).some(v=>v>=1); }},
 
   // Species-specific achievements
-  { id:'guppy_fan', name:'Guppy Enthusiast', desc:'Buy 25 Guppies', icon:'🐟', check:()=>state.stats.lifetimeFishBought >= 25 },
-  { id:'shark_week', name:'Shark Week', desc:'Own a Shark', icon:'🦈', check:()=>{ const t=currentTank(); return t && t.fish.some(f=>f.sp==='shark'); }},
-  { id:'eel_deal', name:'That\'s A-Moray!', desc:'Own 3 Eels at once', icon:'🐍', check:()=>{ const t=currentTank(); return t && t.fish.filter(f=>f.sp==='eel').length >= 3; }},
-  { id:'turtle_power', name:'Turtle Power', desc:'Max out a Turtle\'s growth', icon:'🐢', check:()=>{ const t=currentTank(); return t && t.fish.some(f=>f.sp==='turtle' && f.size>=1); }},
+  { id:'sardine_fan', name:'Sardine School', desc:'Buy 25 Sardines', icon:'🐟', check:()=>state.stats.lifetimeFishBought >= 25 },
+  { id:'shark_week', name:'Shark Week', desc:'Own a Thresher Shark', icon:'🦈', check:()=>{ const t=currentTank(); return t && t.fish.some(f=>f.sp==='shark'); }},
+  { id:'jellyfish_jam', name:'Jellyfish Jam', desc:'Own 3 Jellyfish at once', icon:'🪼', check:()=>{ const t=currentTank(); return t && t.fish.filter(f=>f.sp==='jellyfish').length >= 3; }},
+  { id:'turtle_power', name:'Turtle Power', desc:'Max out a Sea Turtle\'s growth', icon:'🐢', check:()=>{ const t=currentTank(); return t && t.fish.some(f=>f.sp==='turtle' && f.size>=1); }},
   { id:'dolphin_rider', name:'So Long, And Thanks!', desc:'Own a Dolphin', icon:'🐬', check:()=>{ const t=currentTank(); return t && t.fish.some(f=>f.sp==='dolphin'); }},
-  { id:'angler_addiction', name:'Deep End', desc:'Own an Angler Fish', icon:'🔦', check:()=>{ const t=currentTank(); return t && t.fish.some(f=>f.sp==='angler'); }},
+  { id:'apex_predator', name:'Apex Predator', desc:'Own a Thresher Shark', icon:'🦈', check:()=>{ const t=currentTank(); return t && t.fish.some(f=>f.sp==='shark'); }},
 
   // Milestone achievements
   { id:'millionaire', name:'Millionaire Club', desc:'Earn 1,000,000 lifetime coins', icon:'💎', check:()=>state.stats.lifetimeCoins >= 1_000_000 },
@@ -386,6 +386,12 @@ const toastContainer = document.getElementById('toastContainer');
 
 const canvas = document.getElementById('aquarium');
 const ctx = canvas.getContext('2d', { alpha: true });
+// Disable image smoothing for crisp pixel art
+ctx.imageSmoothingEnabled = false;
+ctx.webkitImageSmoothingEnabled = false;
+ctx.mozImageSmoothingEnabled = false;
+ctx.msImageSmoothingEnabled = false;
+
 const coinCanvas = document.getElementById('coinCanvas');
 const coinCtx = coinCanvas.getContext('2d', { alpha: true });
 let viewW=0, viewH=0;
@@ -480,7 +486,7 @@ function migrateFromV1(raw){
       items: v1.items || Object.fromEntries(itemsCatalog.map(i=>[i.id,0])),
       fish: (v1.fish||[]).map(f=>({ ...f, rarity: f.isRare ? 'RARE' : 'COMMON' })),
       lastTick: v1.lastTick || Date.now(),
-      automation: { autoSell:false, autoBuy:false, mode:'smart', target:'guppy', reserve:0 },
+      automation: { autoSell:false, autoBuy:false, mode:'smart', target:'sardine', reserve:0 },
       backgroundId: 'default'
     };
     state.coins = v1.coins ?? 100;
@@ -1884,8 +1890,8 @@ function renderSprite(f){
 
     if (sprite && sprite.complete && spritesLoaded) {
       // Calculate size based on fish growth
-      const baseSize = 12 + f.size * 46;
-      const scale = baseSize / 24; // Normalize based on average sprite size
+      const baseSize = 60 + f.size * 230; // 5x original for better visibility
+      const scale = (baseSize / 24) / 4; // Divide by 4 since sprites are now 4x upscaled
 
       const width = sprite.width * scale;
       const height = sprite.height * scale;

@@ -1,7 +1,13 @@
 {
   "permissions": {
     "allow": [
-      "Bash(python generate_enhanced_sprites.py:*)"
+      "Bash(python generate_enhanced_sprites.py:*)",
+      "Bash(identify:*)",
+      "WebFetch(domain:opengameart.org)",
+      "WebFetch(domain:rapidpunches.itch.io)",
+      "WebFetch(domain:pixelgnome.itch.io)",
+      "WebSearch",
+      "WebFetch(domain:sneaky-cat-studio.itch.io)"
     ],
     "deny": [],
     "ask": []

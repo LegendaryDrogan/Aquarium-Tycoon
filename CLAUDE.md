@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is **Aquarium Tycoon** (v5.3.0), an incremental browser game built with vanilla JavaScript and HTML5 Canvas. This version features a complete predator auto-sell system with 12 unique predators, animated hunting, 5 upgrade levels per predator, time-to-mature displays, and visual feedback for non-active tank earnings. The game includes detailed fish sprites, enhanced backgrounds, achievements, statistics tracking, and a modern UI design.
+This is **Aquarium Tycoon** (v5.3.1), an incremental browser game built with vanilla JavaScript and HTML5 Canvas. This version features a complete predator auto-sell system with 12 unique predators, animated hunting, 5 upgrade levels per predator, time-to-mature displays, and visual feedback for non-active tank earnings. The game includes detailed fish sprites, enhanced backgrounds, achievements, statistics tracking, and a modern UI design.
 
 ## Architecture
 
