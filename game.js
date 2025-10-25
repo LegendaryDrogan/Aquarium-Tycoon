@@ -203,7 +203,9 @@ const itemsCatalog = [
 
 /* ---- PNG Sprite Loading System ---- */
 const fishSprites = {};
+const bgDecoSprites = {}; // Background decoration sprites
 let spritesLoaded = false;
+let bgDecorationsLoaded = false;
 
 function preloadSprites() {
   const spriteNames = ['sardine', 'sandlance', 'herring', 'butterfly', 'parrot', 'croaker',
@@ -232,6 +234,77 @@ function preloadSprites() {
     };
     img.src = `assets/fish/${name}.png`;
     fishSprites[name] = img;
+  });
+}
+
+// Preload background decoration sprites
+function preloadBackgroundDecorations() {
+  const decoSprites = {
+    // Classic Blue decorations
+    'coral1': '8bit-coral.png',
+    'coral2': '8bit-coral2.png',
+    'clam': '8bit-clam-shell-pink.png',
+    'starfish': '8bit-starfish-purple.png',
+    'sanddollar': '8bit-sand-dollar.png',
+    'anemone': '8bit-sea-anemone-0.png',
+
+    // Coral Reef decorations
+    'brainCoral': '8bit-coral-brain-sm.png',
+    'coralTall': 'coral-blue-tall.png',
+    'coralPink': 'coral-pink-thin.png',
+    'coralWide': 'coral-yellow-orange-wide.png',
+
+    // Kelp Forest decorations
+    'grass': '8bit-grass.png',
+    'seaweed': '8bit-seaweed.png',
+    'seahorse': '8bit-seahorse-0.png',
+
+    // Lagoon decorations
+    'hyacinth': '8bit-flower-water-hyacinth-small.png',
+    'mangrove': '8bit-leaf-mangrove.png',
+
+    // Night Mode decorations
+    'moon': '8bit-moon1.png',
+    'jellyGlow': '8bit-jellyfish-0.png',
+
+    // Ice decorations
+    'penguin1': '8bit-penguin-rockhopper1.png',
+    'penguin2': '8bit-penguin-rockhopper2.png',
+
+    // Fantasy decorations
+    'jellyLarge': 'jellyfish-large1.png',
+    'jellyMedium': 'jellyfish-medium1.png',
+    'jellyTiny': 'jellyfish-tiny1.png',
+    'octopusGlow': '8bit-octopus-0.png',
+
+    // Volcano decorations
+    'crab': 'crab-tiny.png',
+
+    // Deep sea decorations
+    'frogfish': '8bit-frogfish-0.png'
+  };
+
+  let loadedCount = 0;
+  const totalSprites = Object.keys(decoSprites).length;
+
+  Object.entries(decoSprites).forEach(([key, filename]) => {
+    const img = new Image();
+    img.onload = () => {
+      loadedCount++;
+      if (loadedCount === totalSprites) {
+        bgDecorationsLoaded = true;
+        console.log('✅ All background decorations loaded successfully!');
+      }
+    };
+    img.onerror = () => {
+      console.warn(`⚠️ Failed to load background decoration: ${filename}`);
+      loadedCount++;
+      if (loadedCount === totalSprites) {
+        bgDecorationsLoaded = true;
+      }
+    };
+    img.src = `assets/pixelart/${filename}`;
+    bgDecoSprites[key] = img;
   });
 }
 
@@ -752,7 +825,12 @@ function upgradePredator(predId, targetLevel){
   const pred = predators.find(p=>p.id===predId);
   if(!pred) return;
 
-  const currentLevel = t.predators[predId]?.level || 0;
+  // Ensure this specific predator entry exists
+  if(!t.predators[predId]){
+    t.predators[predId] = { level: 0, lastHunt: Date.now() };
+  }
+
+  const currentLevel = t.predators[predId].level || 0;
 
   // Can only upgrade to next level
   if(targetLevel !== currentLevel + 1){
@@ -1150,13 +1228,20 @@ function renderShop(){
       t.predators = Object.fromEntries(predators.map(p=>[p.id, { level:0, lastHunt:Date.now() }]));
     }
 
+    // Ensure each predator entry exists individually
+    predators.forEach(p => {
+      if(!t.predators[p.id]) {
+        t.predators[p.id] = { level: 0, lastHunt: Date.now() };
+      }
+    });
+
     const header = document.createElement('div');
     header.className = 'tiny';
     header.innerHTML = `<b>${t.name}</b> — Predators auto-sell mature prey fish at intervals`;
     contentEl.appendChild(header);
 
     predators.forEach(pred=>{
-      const currentLevel = t.predators[pred.id]?.level || 0;
+      const currentLevel = t.predators[pred.id].level || 0;
       const preySpecies = species.find(s=>s.id===pred.prey);
 
       // Count mature prey fish
@@ -1181,9 +1266,9 @@ function renderShop(){
         else if(!canAfford) buttonClass += ' cant-afford';
 
         const priceText = isOwned ? '✓' : (isLocked ? '🔒' : fmt(cost));
-        const tooltipText = isOwned ? 'Owned' : (isLocked ? 'Unlock previous levels first' : `${fmt(cost)} coins - Auto-sells every ${levelData.interval}s`);
+        const tooltipText = isOwned ? 'Owned' : (isLocked ? 'Unlock previous levels first' : (!canAfford ? `Need ${fmt(cost)} coins (you have ${fmt(state.coins)})` : `${fmt(cost)} coins - Auto-sells every ${levelData.interval}s`));
 
-        levelButtonsHTML += `<button class="${buttonClass}" data-pred="${pred.id}" data-level="${i}" ${(isLocked || isOwned)?'disabled':''} title="${tooltipText}">
+        levelButtonsHTML += `<button class="${buttonClass}" data-pred="${pred.id}" data-level="${i}" ${(isLocked || isOwned || !canAfford)?'disabled':''} title="${tooltipText}">
           Lv${i}<br><span style="font-size:0.8em;opacity:0.9">${priceText}</span>
         </button>`;
       }
@@ -1199,13 +1284,15 @@ function renderShop(){
         </div>
       `;
 
-      // Attach event listeners to level buttons
-      card.querySelectorAll('button[data-pred]').forEach(btn=>{
-        btn.onclick = ()=>{
-          const predId = btn.getAttribute('data-pred');
-          const level = parseInt(btn.getAttribute('data-level'));
-          upgradePredator(predId, level);
-        };
+      // Attach click handlers to each level button
+      card.querySelectorAll('button[data-pred]').forEach(btn => {
+        if (!btn.disabled) {
+          btn.onclick = () => {
+            const predId = btn.getAttribute('data-pred');
+            const level = parseInt(btn.getAttribute('data-level'));
+            upgradePredator(predId, level);
+          };
+        }
       });
 
       contentEl.appendChild(card);
@@ -2051,6 +2138,45 @@ function drawBackgroundBase(){
         ctx.arc(x - r * 0.3, y - r * 0.3, r * 0.4, 0, Math.PI * 2);
         ctx.fill();
       });
+
+      // Add pixel art decorations
+      if (bgDecorationsLoaded) {
+        const decoItems = getStableDecor('default_deco', 10, 777);
+        decoItems.forEach((deco, i) => {
+          const x = deco.xPct * viewW;
+          const y = sandBase + deco.yPct * (viewH - sandBase) * 0.7;
+          const scale = 0.8 + deco.sizeFactor * 1.2;
+
+          // Rotate between different decoration types
+          const decoType = i % 6;
+          let sprite, w = 32, h = 32;
+
+          if (decoType === 0 && bgDecoSprites.coral1?.complete) {
+            sprite = bgDecoSprites.coral1;
+          } else if (decoType === 1 && bgDecoSprites.coral2?.complete) {
+            sprite = bgDecoSprites.coral2;
+          } else if (decoType === 2 && bgDecoSprites.clam?.complete) {
+            sprite = bgDecoSprites.clam;
+            w = 24; h = 20;
+          } else if (decoType === 3 && bgDecoSprites.starfish?.complete) {
+            sprite = bgDecoSprites.starfish;
+            w = 16; h = 16;
+          } else if (decoType === 4 && bgDecoSprites.sanddollar?.complete) {
+            sprite = bgDecoSprites.sanddollar;
+            w = 16; h = 16;
+          } else if (decoType === 5 && bgDecoSprites.anemone?.complete) {
+            sprite = bgDecoSprites.anemone;
+            w = 16; h = 24;
+          }
+
+          if (sprite) {
+            ctx.save();
+            ctx.globalAlpha = 0.8;
+            ctx.drawImage(sprite, x - (w * scale) / 2, y - (h * scale) / 2, w * scale, h * scale);
+            ctx.restore();
+          }
+        });
+      }
       break;
     }
 
@@ -2181,6 +2307,40 @@ function drawBackgroundBase(){
           ctx.stroke();
         }
       });
+
+      // Add pixel art coral decorations for visual variety
+      if (bgDecorationsLoaded) {
+        const coralSprites = getStableDecor('coral_sprites', 8, 445);
+        coralSprites.forEach((deco, i) => {
+          const x = deco.xPct * viewW;
+          const y = viewH * 0.85 + deco.yPct * (viewH * 0.13);
+          const scale = 1.5 + deco.sizeFactor * 2.0;
+
+          const spriteType = i % 4;
+          let sprite, w = 32, h = 32;
+
+          if (spriteType === 0 && bgDecoSprites.brainCoral?.complete) {
+            sprite = bgDecoSprites.brainCoral;
+            w = 16; h = 16;
+          } else if (spriteType === 1 && bgDecoSprites.coralTall?.complete) {
+            sprite = bgDecoSprites.coralTall;
+            w = 24; h = 48;
+          } else if (spriteType === 2 && bgDecoSprites.coralPink?.complete) {
+            sprite = bgDecoSprites.coralPink;
+            w = 16; h = 32;
+          } else if (spriteType === 3 && bgDecoSprites.coralWide?.complete) {
+            sprite = bgDecoSprites.coralWide;
+            w = 48; h = 32;
+          }
+
+          if (sprite) {
+            ctx.save();
+            ctx.globalAlpha = 0.9;
+            ctx.drawImage(sprite, x - (w * scale) / 2, y - h * scale, w * scale, h * scale);
+            ctx.restore();
+          }
+        });
+      }
       break;
     }
 
@@ -2217,6 +2377,37 @@ function drawBackgroundBase(){
         ctx.stroke();
       });
       ctx.restore();
+
+      // Add pixel art seaweed and seahorse decorations
+      if (bgDecorationsLoaded) {
+        const kelpSprites = getStableDecor('kelp_sprites', 6, 665);
+        kelpSprites.forEach((deco, i) => {
+          const x = deco.xPct * viewW;
+          const y = viewH * 0.85 + deco.yPct * (viewH * 0.10);
+          const scale = 1.2 + deco.sizeFactor * 1.5;
+
+          const spriteType = i % 3;
+          let sprite, w = 16, h = 24;
+
+          if (spriteType === 0 && bgDecoSprites.grass?.complete) {
+            sprite = bgDecoSprites.grass;
+            w = 16; h = 24;
+          } else if (spriteType === 1 && bgDecoSprites.seaweed?.complete) {
+            sprite = bgDecoSprites.seaweed;
+            w = 16; h = 32;
+          } else if (spriteType === 2 && bgDecoSprites.seahorse?.complete) {
+            sprite = bgDecoSprites.seahorse;
+            w = 16; h = 32;
+          }
+
+          if (sprite) {
+            ctx.save();
+            ctx.globalAlpha = 0.7;
+            ctx.drawImage(sprite, x - (w * scale) / 2, y - h * scale, w * scale, h * scale);
+            ctx.restore();
+          }
+        });
+      }
       break;
     }
 
@@ -2369,6 +2560,28 @@ function drawBackgroundBase(){
       ctx.fillStyle = pathGrad;
       ctx.fillRect(moonX - 150, moonY, 200, viewH - moonY);
       ctx.restore();
+
+      // Add glowing jellyfish for atmosphere
+      if (bgDecorationsLoaded) {
+        const nightJellies = getStableDecor('night_jellies', 5, 111);
+        nightJellies.forEach((jelly, i) => {
+          const x = jelly.xPct * viewW;
+          const yBase = viewH * 0.3 + jelly.yPct * (viewH * 0.5);
+          const bob = Math.sin(time * 0.5 + jelly.offset * 0.1) * 15;
+          const y = yBase + bob;
+          const scale = 1.0 + jelly.sizeFactor * 1.5;
+
+          if (bgDecoSprites.jellyGlow?.complete) {
+            ctx.save();
+            // Add glow effect
+            ctx.shadowColor = 'rgba(150,220,255,0.6)';
+            ctx.shadowBlur = 25;
+            ctx.globalAlpha = 0.6 + Math.sin(time + jelly.offset) * 0.2;
+            ctx.drawImage(bgDecoSprites.jellyGlow, x - 8 * scale, y - 8 * scale, 16 * scale, 16 * scale);
+            ctx.restore();
+          }
+        });
+      }
       break;
     }
 
@@ -2454,6 +2667,31 @@ function drawBackgroundBase(){
         ctx.fillRect(x + 2, 0, 2, h * 0.4);
         ctx.fillStyle='rgba(255,255,255,0.4)';
       });
+
+      // Add penguin decorations for arctic theme
+      if (bgDecorationsLoaded) {
+        const icePenguins = getStableDecor('ice_penguins', 4, 333);
+        icePenguins.forEach((penguin, i) => {
+          const x = penguin.xPct * viewW;
+          const y = viewH * 0.7 + penguin.yPct * (viewH * 0.25);
+          const scale = 1.2 + penguin.sizeFactor * 1.0;
+          const swim = Math.sin(time * 2 + penguin.offset) * 20;
+
+          // Alternate between two penguin sprites
+          const sprite = (i % 2 === 0 && bgDecoSprites.penguin1?.complete)
+            ? bgDecoSprites.penguin1
+            : bgDecoSprites.penguin2?.complete
+              ? bgDecoSprites.penguin2
+              : null;
+
+          if (sprite) {
+            ctx.save();
+            ctx.globalAlpha = 0.8;
+            ctx.drawImage(sprite, x + swim - 8 * scale, y - 8 * scale, 16 * scale, 16 * scale);
+            ctx.restore();
+          }
+        });
+      }
       break;
     }
 
@@ -2490,6 +2728,44 @@ function drawBackgroundBase(){
         ctx.fillRect(x - 3, y - 40, 6, 40);
       });
       ctx.restore();
+
+      // Add bioluminescent jellyfish for fantasy atmosphere
+      if (bgDecorationsLoaded) {
+        const fantasyJellies = getStableDecor('fantasy_jellies', 8, 444);
+        fantasyJellies.forEach((jelly, i) => {
+          const x = jelly.xPct * viewW;
+          const yBase = viewH * 0.2 + jelly.yPct * (viewH * 0.6);
+          const bob = Math.sin(time * 0.8 + jelly.offset * 0.15) * 25;
+          const y = yBase + bob;
+          const scale = 0.8 + jelly.sizeFactor * 1.5;
+          const hue = 180 + jelly.hue * 0.5;
+
+          // Choose jellyfish size
+          let sprite, w = 16, h = 16;
+          const jellyType = i % 3;
+          if (jellyType === 0 && bgDecoSprites.jellyLarge?.complete) {
+            sprite = bgDecoSprites.jellyLarge;
+            w = 32; h = 48;
+          } else if (jellyType === 1 && bgDecoSprites.jellyMedium?.complete) {
+            sprite = bgDecoSprites.jellyMedium;
+            w = 24; h = 32;
+          } else if (jellyType === 2 && bgDecoSprites.jellyTiny?.complete) {
+            sprite = bgDecoSprites.jellyTiny;
+            w = 16; h = 16;
+          }
+
+          if (sprite) {
+            ctx.save();
+            ctx.globalCompositeOperation = 'screen';
+            // Pulsing glow effect
+            ctx.shadowColor = `hsla(${hue}, 80%, 70%, 0.8)`;
+            ctx.shadowBlur = 30 * (0.7 + Math.sin(time * 2 + jelly.offset) * 0.3);
+            ctx.globalAlpha = 0.7 + Math.sin(time * 1.5 + jelly.offset * 0.2) * 0.3;
+            ctx.drawImage(sprite, x - (w * scale) / 2, y - (h * scale) / 2, w * scale, h * scale);
+            ctx.restore();
+          }
+        });
+      }
       break;
     }
   }
@@ -3735,5 +4011,6 @@ function init(){
   drawForeground();
 
   preloadSprites(); // Load PNG sprites (will call startGameLoop when ready)
+  preloadBackgroundDecorations(); // Load background decoration sprites
 }
 window.addEventListener('load', init);
